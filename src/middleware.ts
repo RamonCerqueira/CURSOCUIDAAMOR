@@ -23,7 +23,7 @@ async function validPayload(token: string, secret: string) {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
-  if (path.startsWith('/_next') || path.startsWith('/api/auth/login') || path.startsWith('/api/auth/logout') || path.startsWith('/api/certificados/') || path.startsWith('/validar/') || path === '/login' || path === '/favicon.ico') return NextResponse.next()
+  if (path.startsWith('/_next') || path.startsWith('/api/auth/login') || path.startsWith('/api/auth/logout') || path.startsWith('/api/certificados/') || path.startsWith('/validar/') || path === '/login' || path === '/login-cuidado.jpg' || path === '/favicon.ico') return NextResponse.next()
   const secrets = [...new Set([process.env.CURSO_JWT_SECRET, process.env.JWT_SECRET, process.env.NODE_ENV !== 'production' ? 'dev-secret' : ''].filter(Boolean))] as string[]
   const tokens = [request.cookies.get('token')?.value, request.cookies.get('curso_token')?.value].filter(Boolean) as string[]
   const payloads = (await Promise.all(tokens.map(async token => (await Promise.all(secrets.map(secret => validPayload(token, secret)))).find(Boolean)))).filter(Boolean)
