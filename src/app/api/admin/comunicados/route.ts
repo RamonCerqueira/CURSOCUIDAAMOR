@@ -1,0 +1,5 @@
+import {NextResponse} from 'next/server'
+import {prisma} from '@/lib/prisma'
+import {requireCourseAdmin,auditCourse} from '@/lib/courseApi'
+import {ensureCursoTables} from '@/lib/ensureCursoTables'
+export async function POST(req:Request){const a=await requireCourseAdmin();if(a.response)return a.response;try{await ensureCursoTables();const b=await req.json(),titulo=String(b.titulo||'').trim(),mensagem=String(b.mensagem||'').trim(),turmaId=b.turmaId?Number(b.turmaId):null;if(!titulo||!mensagem)return NextResponse.json({sucesso:false,mensagem:'Informe título e mensagem.'},{status:400});const [r]=await prisma.$queryRaw<any[]>`INSERT dbo.CursoComunicado(TurmaId,Titulo,Mensagem,Publicado,PublicadoEm,CriadoPor) OUTPUT INSERTED.ComunicadoId VALUES(${turmaId},${titulo},${mensagem},1,SYSUTCDATETIME(),${a.actor.id})`;await auditCourse(a.actor.id,a.actor.role,'PUBLICAR','COMUNICADO',r.ComunicadoId,{turmaId});return NextResponse.json({sucesso:true,data:r},{status:201})}catch{return NextResponse.json({sucesso:false,mensagem:'Não foi possível publicar o comunicado.'},{status:500})}}

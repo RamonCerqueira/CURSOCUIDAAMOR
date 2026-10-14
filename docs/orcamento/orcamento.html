@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Orçamento - Plataforma Curso Cuida</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #141B3A; font-size: 11px; line-height: 1.5; }
+  .page { width: 210mm; min-height: 297mm; padding: 16mm 16mm 18mm; page-break-after: always; position: relative; }
+  .page:last-child { page-break-after: auto; }
+  .cover { background: linear-gradient(160deg, #111936 0%, #1d2660 60%, #4F46E5 130%); color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 22mm 20mm; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo .box { width: 44px; height: 44px; border-radius: 12px; background: #4F46E5; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .logo b { font-size: 15px; letter-spacing: 1px; }
+  .cover h1 { font-size: 38px; line-height: 1.15; margin-bottom: 14px; }
+  .cover .sub { font-size: 14px; color: #C9CEE6; max-width: 120mm; }
+  .tag { display: inline-block; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 999px; padding: 4px 14px; font-size: 10px; letter-spacing: 1.5px; margin-bottom: 18px; }
+  .cover .meta { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; border-top: 1px solid rgba(255,255,255,.2); padding-top: 14px; }
+  .cover .meta span { display: block; font-size: 9px; color: #9aa3cf; letter-spacing: 1px; text-transform: uppercase; }
+  .cover .meta strong { font-size: 13px; }
+  h2 { font-size: 18px; color: #141B3A; margin-bottom: 4px; }
+  h2 + .lead { color: #7A819B; margin-bottom: 12px; }
+  h2::before { content: ''; display: inline-block; width: 4px; height: 16px; background: #4F46E5; border-radius: 2px; margin-right: 8px; vertical-align: -2px; }
+  h3 { font-size: 12px; margin: 12px 0 6px; color: #4F46E5; }
+  p { margin-bottom: 8px; }
+  .card { background: #F3F5FB; border: 1px solid #E8EBF4; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+  ul { padding-left: 16px; }
+  li { margin-bottom: 3px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
+  th { background: #141B3A; color: #fff; text-align: left; font-size: 10px; padding: 7px 9px; }
+  th.r, td.r { text-align: right; }
+  td { padding: 6px 9px; border-bottom: 1px solid #EEF0F7; font-size: 10.5px; vertical-align: top; }
+  tr:nth-child(even) td { background: #F9FAFE; }
+  td small { display: block; color: #7A819B; font-size: 9px; }
+  .sub td { background: #E9E7FD !important; font-weight: 700; }
+  .total td { background: #4F46E5 !important; color: #fff; font-weight: 700; font-size: 13px; padding: 10px 9px; }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 14px; }
+  .kpi { background: #fff; border: 1px solid #E8EBF4; border-radius: 10px; padding: 10px 12px; box-shadow: 0 2px 10px rgba(20,27,58,.05); }
+  .kpi span { font-size: 9px; color: #7A819B; text-transform: uppercase; letter-spacing: .8px; }
+  .kpi strong { display: block; font-size: 20px; color: #4F46E5; }
+  .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 36px; }
+  .sign div { border-top: 1px solid #141B3A; padding-top: 6px; text-align: center; font-size: 10px; }
+  .footer { position: absolute; left: 16mm; right: 16mm; bottom: 8mm; display: flex; justify-content: space-between; font-size: 9px; color: #7A819B; border-top: 1px solid #E8EBF4; padding-top: 5px; }
+  .note { font-size: 9.5px; color: #7A819B; }
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<section class="page cover">
+  <div class="logo"><div class="box">🎓</div><div><b>CURSO CUIDA</b><br><span style="font-size:10px;color:#9aa3cf">Painel administrativo</span></div></div>
+  <div>
+    <div class="tag">PROPOSTA COMERCIAL</div>
+    <h1>Desenvolvimento da Plataforma de Cursos Curso Cuida</h1>
+    <p class="sub">Plataforma web de gestão de alunos, cursos, turmas, frequência, vínculos, notas e certificados, com painel administrativo e área do aluno.</p>
+  </div>
+  <div class="meta">
+    <div><span>Cliente</span><strong>Cuida Amor</strong></div>
+    <div><span>Data</span><strong>14/10/2026</strong></div>
+    <div><span>Validade</span><strong>15 dias</strong></div>
+  </div>
+</section>
+
+<!-- ESCOPO -->
+<section class="page">
+  <h2>1. Visão geral do projeto</h2>
+  <p class="lead">Escopo, tecnologias e entregas</p>
+  <p>Esta proposta cobre o desenvolvimento completo da plataforma <b>Curso Cuida</b>, para que a Cuida Amor administre seus cursos, turmas e alunos em um só lugar, com acompanhamento de desempenho, emissão de certificados e uma área própria para o aluno.</p>
+
+  <div class="kpis">
+    <div class="kpi"><span>Módulos</span><strong>16</strong></div>
+    <div class="kpi"><span>Endpoints de API</span><strong>~28</strong></div>
+    <div class="kpi"><span>Prazo estimado</span><strong>10–12 sem.</strong></div>
+  </div>
+
+  <h3>Tecnologias</h3>
+  <div class="card">Next.js 14 (React) · TypeScript · Prisma ORM · SQL Server · Autenticação por sessão com controle de perfis · Interface responsiva (desktop, tablet e celular)</div>
+
+  <h3>Funcionalidades incluídas</h3>
+  <div class="grid2">
+    <div class="card"><b>Painel administrativo</b>
+      <ul>
+        <li>Dashboard com indicadores e gráficos</li>
+        <li>Gestão de alunos e pessoas, com busca, filtros e paginação</li>
+        <li>Gestão de cursos, conteúdo, módulos e aulas</li>
+        <li>Turmas, instrutores e aulas</li>
+        <li>Controle de frequência por aula</li>
+      </ul>
+    </div>
+    <div class="card"><b>Acadêmico e relacionamento</b>
+      <ul>
+        <li>Vínculos aluno–curso–turma</li>
+        <li>Lançamento de notas e documentos</li>
+        <li>Impressos por vínculo</li>
+        <li>Certificados com validação pública por código</li>
+        <li>Comunicados e segmentos</li>
+        <li>Relatórios com filtros e exportação</li>
+      </ul>
+    </div>
+    <div class="card"><b>Área do aluno</b>
+      <ul>
+        <li>Acesso por login próprio</li>
+        <li>Meus cursos e acompanhamento</li>
+        <li>Impressos e documentos</li>
+      </ul>
+    </div>
+    <div class="card"><b>Base técnica</b>
+      <ul>
+        <li>Integração com o banco de dados existente</li>
+        <li>Segurança e controle de acesso por perfil</li>
+        <li>Menu lateral responsivo e recolhível</li>
+        <li>Testes, QA e documentação</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer"><span>Curso Cuida · Proposta comercial</span><span>Página 2</span></div>
+</section>
+
+<!-- ORÇAMENTO -->
+<section class="page">
+  <h2>2. Orçamento detalhado</h2>
+  <p class="lead">Valor/hora de referência: R$ 100,00 (desenvolvedor pleno)</p>
+
+  <table>
+    <thead><tr><th>Módulo</th><th class="r">Horas</th><th class="r">Valor (R$)</th></tr></thead>
+    <tbody>
+      <tr><td>Setup, ambiente e middleware<small>Estrutura do projeto, configuração e CI básico</small></td><td class="r">10</td><td class="r">1.000,00</td></tr>
+      <tr><td>Integração com banco legado e mapeamento Prisma</td><td class="r">20</td><td class="r">2.000,00</td></tr>
+      <tr><td>Autenticação, sessão, perfis e controle de acesso</td><td class="r">18</td><td class="r">1.800,00</td></tr>
+      <tr><td>Design system e layout<small>Shell, sidebar responsiva, componentes base</small></td><td class="r">28</td><td class="r">2.800,00</td></tr>
+      <tr><td>Dashboard e API de estatísticas</td><td class="r">20</td><td class="r">2.000,00</td></tr>
+      <tr><td>Pessoas e Alunos<small>CRUD, busca, filtros, paginação, gestão de acesso</small></td><td class="r">26</td><td class="r">2.600,00</td></tr>
+      <tr><td>Cursos<small>CRUD, conteúdo, módulos e aulas</small></td><td class="r">32</td><td class="r">3.200,00</td></tr>
+      <tr><td>Turmas<small>CRUD, instrutores e aulas</small></td><td class="r">26</td><td class="r">2.600,00</td></tr>
+      <tr><td>Frequência</td><td class="r">14</td><td class="r">1.400,00</td></tr>
+      <tr><td>Vínculos e Notas<small>Matrícula, notas, documentos e impressos</small></td><td class="r">28</td><td class="r">2.800,00</td></tr>
+      <tr><td>Certificados<small>Geração e validação pública por código</small></td><td class="r">16</td><td class="r">1.600,00</td></tr>
+      <tr><td>Comunicados e Segmentos</td><td class="r">12</td><td class="r">1.200,00</td></tr>
+      <tr><td>Relatórios<small>Gráficos, filtros e exportação</small></td><td class="r">22</td><td class="r">2.200,00</td></tr>
+      <tr><td>Área do aluno</td><td class="r">30</td><td class="r">3.000,00</td></tr>
+      <tr><td>Testes, QA, responsividade e acessibilidade</td><td class="r">28</td><td class="r">2.800,00</td></tr>
+      <tr><td>Deploy, documentação e handoff</td><td class="r">10</td><td class="r">1.000,00</td></tr>
+      <tr class="sub"><td>Subtotal</td><td class="r">340 h</td><td class="r">34.000,00</td></tr>
+      <tr><td>Gestão do projeto, reuniões e imprevistos (15%)</td><td class="r">51 h</td><td class="r">5.100,00</td></tr>
+      <tr class="total"><td>TOTAL DO INVESTIMENTO</td><td class="r">391 h</td><td class="r">R$ 39.100,00</td></tr>
+    </tbody>
+  </table>
+
+  <p class="note">Valores em reais (BRL). Impostos e emissão de nota fiscal conforme o regime tributário do prestador.</p>
+
+  <div class="footer"><span>Curso Cuida · Proposta comercial</span><span>Página 3</span></div>
+</section>
+
+<!-- CONDIÇÕES -->
+<section class="page">
+  <h2>3. Prazo e condições comerciais</h2>
+  <p class="lead">Cronograma, pagamento e premissas</p>
+
+  <h3>Cronograma estimado (10 a 12 semanas)</h3>
+  <table>
+    <thead><tr><th>Fase</th><th>Conteúdo</th><th class="r">Semanas</th></tr></thead>
+    <tbody>
+      <tr><td>1. Fundação</td><td>Setup, banco, autenticação e layout base</td><td class="r">1–3</td></tr>
+      <tr><td>2. Núcleo acadêmico</td><td>Alunos, cursos, turmas, frequência</td><td class="r">4–7</td></tr>
+      <tr><td>3. Vínculos e relacionamento</td><td>Vínculos, notas, certificados, comunicados</td><td class="r">7–9</td></tr>
+      <tr><td>4. Análise e aluno</td><td>Dashboard, relatórios e área do aluno</td><td class="r">9–11</td></tr>
+      <tr><td>5. Qualidade e entrega</td><td>Testes, ajustes, deploy e documentação</td><td class="r">11–12</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Condições de pagamento (sugestão)</h3>
+  <table>
+    <thead><tr><th>Etapa</th><th class="r">%</th><th class="r">Valor (R$)</th></tr></thead>
+    <tbody>
+      <tr><td>Assinatura da proposta (sinal)</td><td class="r">30%</td><td class="r">11.730,00</td></tr>
+      <tr><td>Entrega do núcleo acadêmico (fase 2)</td><td class="r">40%</td><td class="r">15.640,00</td></tr>
+      <tr><td>Entrega final e aceite</td><td class="r">30%</td><td class="r">11.730,00</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Premissas</h3>
+  <ul>
+    <li>Layouts e identidade visual já definidos; não há etapa de design de UX/UI.</li>
+    <li>O cliente fornece acesso ao banco de dados, ambiente de hospedagem e conteúdos dos cursos.</li>
+    <li>Prazos dependem de respostas e aprovações do cliente em até 2 dias úteis.</li>
+  </ul>
+
+  <h3>Fora do escopo</h3>
+  <ul>
+    <li>Hospedagem, domínio, licenças, serviço de e-mail e armazenamento de arquivos e vídeos.</li>
+    <li>Pagamentos online, aplicativo mobile nativo e streaming próprio de vídeo.</li>
+    <li>Integrações com sistemas externos não descritas nesta proposta.</li>
+    <li>Manutenção e suporte pós-entrega, que podem ser contratados à parte.</li>
+  </ul>
+
+  <h3>Alterações de escopo</h3>
+  <p>Funcionalidades adicionais ou mudanças solicitadas após a aprovação serão orçadas separadamente, ao valor de R$ 100,00 por hora.</p>
+
+  <h3>Validade</h3>
+  <p>Esta proposta é válida por 15 dias a partir de 14/10/2026.</p>
+
+  <div class="sign">
+    <div>Contratante<br><b>Cuida Amor</b></div>
+    <div>Prestador de serviço</div>
+  </div>
+
+  <div class="footer"><span>Curso Cuida · Proposta comercial</span><span>Página 4</span></div>
+</section>
+
+</body>
+</html>

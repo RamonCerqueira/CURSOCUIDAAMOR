@@ -1,0 +1,434 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model CLIENTEs {
+  Cliente              String?   @db.VarChar(50)
+  Razao                String?   @db.VarChar(80)
+  Complemento          String?   @db.VarChar(20)
+  Caminho              String?   @db.VarChar(60)
+  Dia_Nasc             Int?
+  Mes_Nasc             Int?
+  Ano_Nasc             Int?
+  CodSeg               Int?
+  SegmentoRef          Segmento? @relation(fields: [CodSeg], references: [CodSeg])
+  CodInd               Int?
+  CodTipo              Int?
+  CodVen               Int?
+  Site                 String?   @db.VarChar(40)
+  Endereco             String?   @db.VarChar(60)
+  Bairro               String?   @db.VarChar(25)
+  Cidade               String?   @db.VarChar(30)
+  Estado               String?   @db.VarChar(2)
+  Cep                  String?   @db.VarChar(9)
+  Tel                  String?   @db.VarChar(14)
+  Tel2                 String?   @db.VarChar(14)
+  EndCob               String?   @db.VarChar(60)
+  BairroCob            String?   @db.VarChar(25)
+  CidCob               String?   @db.VarChar(20)
+  EstCob               String?   @db.VarChar(2)
+  CepCob               String?   @db.VarChar(9)
+  TelCob               String?   @db.VarChar(14)
+  TelCob2              String?   @db.VarChar(14)
+  EndEnt               String?   @db.VarChar(60)
+  BairroEnt            String?   @db.VarChar(25)
+  CidEnt               String?   @db.VarChar(20)
+  EstEnt               String?   @db.VarChar(2)
+  CepEnt               String?   @db.VarChar(9)
+  TelEnt               String?   @db.VarChar(14)
+  TelEnt2              String?   @db.VarChar(14)
+  CPF                  String?   @db.VarChar(12)
+  RG                   String?   @db.VarChar(15)
+  Orgao                String?   @db.VarChar(5)
+  CGC                  String?   @db.VarChar(18)
+  IE                   String?   @db.VarChar(15)
+  IM                   String?   @db.VarChar(15)
+  DataCad              DateTime? @db.DateTime
+  DataBaixa            DateTime? @db.DateTime
+  Situacao             String?   @db.VarChar(1)
+  Tipo                 String?   @db.VarChar(1)
+  Sexo                 String?   @db.VarChar(20)
+  Limite               Decimal?  @db.Decimal(12, 3)
+  Acordo               Decimal?  @db.Decimal(12, 3)
+  Cargo                String?   @db.VarChar(20)
+  Departamento         String?   @db.VarChar(20)
+  Renda1               Decimal?  @db.Decimal(12, 3)
+  Renda2               Decimal?  @db.Decimal(12, 3)
+  Agencia1             String?   @db.VarChar(10)
+  Agencia2             String?   @db.VarChar(6)
+  Conta1               String?   @db.VarChar(10)
+  Conta2               String?   @db.VarChar(10)
+  Banco1               String?   @db.VarChar(20)
+  Banco2               String?   @db.VarChar(20)
+  DataConta1           String?   @db.VarChar(7)
+  DataConta2           String?   @db.VarChar(7)
+  Especial1            String?   @db.VarChar(1)
+  Especial2            String?   @db.VarChar(1)
+  Referencias1         String?   @db.VarChar(80)
+  Referencias1_CPF     String?   @db.VarChar(18)
+  Referencias2         String?   @db.VarChar(80)
+  Referencias2_CPF     String?   @db.VarChar(18)
+  EmissaoRG            DateTime? @db.DateTime
+  FiliacaoPai          String?   @db.VarChar(60)
+  FiliacaoMae          String?   @db.VarChar(60)
+  EMail                String?   @db.VarChar(50)
+  Prazo                Decimal?  @db.Decimal(12, 3)
+  Indice               Decimal?  @db.Decimal(12, 3)
+  Observacao           String?   @db.Text
+  AddValorem           Decimal?  @db.Decimal(12, 3)
+  SecCat               Decimal?  @db.Decimal(12, 3)
+  Despacho             Decimal?  @db.Decimal(12, 3)
+  ITR                  Decimal?  @db.Decimal(12, 3)
+  Pedagio              Decimal?  @db.Decimal(12, 3)
+  Emergencia           Decimal?  @db.Decimal(12, 3)
+  Aceso                Decimal?  @db.Decimal(12, 3)
+  Gris                 Decimal?  @db.Decimal(12, 3)
+  Taxa                 Decimal?  @db.Decimal(12, 3)
+  Redespacho           Decimal?  @db.Decimal(12, 3)
+  Entrega              Decimal?  @db.Decimal(12, 3)
+  TaxaExcedente        Decimal?  @db.Decimal(12, 3)
+  EntregaExcedente     Decimal?  @db.Decimal(12, 3)
+  RedespachoExcedente  Decimal?  @db.Decimal(12, 3)
+  LimiteMinimo         Decimal?  @db.Decimal(12, 3)
+  TaxaMinimo           Decimal?  @db.Decimal(12, 3)
+  EntregaMinimo        Decimal?  @db.Decimal(12, 3)
+  RedespachoMinimo     Decimal?  @db.Decimal(12, 3)
+  PrazoContato         Int?
+  CodForma             Int?
+  Marcado              String?   @db.VarChar(1)
+  CodCliMega           String?   @db.VarChar(15)
+  NireSede             String?   @db.VarChar(20)
+  NireFilial           String?   @db.VarChar(20)
+  CapitalSocial        Decimal?  @db.Decimal(12, 3)
+  CapitalIntegralizado Decimal?  @db.Decimal(12, 3)
+  NireAnterior         String?   @db.VarChar(20)
+  UfOrigem             String?   @db.VarChar(2)
+  DataTermino          DateTime? @db.DateTime
+  DataAssembleia       DateTime? @db.DateTime
+  Chave                String?   @db.VarChar(15)
+  CodCli               Int       @id(clustered: false, map: "PK_Clientes")
+  CodCli1              Int?
+  CodCat               Int?
+  Edificacao           String?   @db.VarChar(50)
+  Parcelamento         String?   @db.VarChar(50)
+  ResponsavelTecnico   String?   @db.VarChar(50)
+  CREA                 String?   @db.VarChar(50)
+  Sucom                String?   @db.VarChar(50)
+  Telefone             String?   @db.VarChar(50)
+  Uso                  String?   @db.VarChar(50)
+  AreaConstruida       String?   @db.VarChar(50)
+  UnidadeImobiliaria   String?   @db.VarChar(50)
+  Servicos             String?   @db.VarChar(50)
+  Valor                String?   @db.VarChar(50)
+  Atividade            String?   @db.VarChar(50)
+  TipoAtividade        String?   @db.VarChar(50)
+  PorteEmpresa         String?   @db.VarChar(50)
+  TipoImovel           String?   @db.VarChar(50)
+  Terreno              String?   @db.VarChar(50)
+  AreaUtilizada        String?   @db.VarChar(50)
+  Vagas                String?   @db.VarChar(50)
+  Diversos             String?   @db.VarChar(50)
+  Programacao          String?   @db.VarChar(1)
+  Inclui_Frete         String?   @db.VarChar(1)
+  CodVen2              Int?
+  Prazo2               Int?
+  Prazo3               Int?
+  Prazo4               Int?
+  Prazo5               Int?
+  Comissao             Decimal?  @db.Decimal(12, 3)
+  Comissao2            Decimal?  @db.Decimal(12, 3)
+  Frequencia           String?   @db.VarChar(10)
+  Contato              String?   @db.VarChar(1)
+  ContatoDireto        String?   @db.VarChar(30)
+  PosVenda             String?   @db.VarChar(1)
+  CodUsu               Int?
+  CodUsu2              Int?
+  Admissao             DateTime? @db.DateTime
+  CampoLivre           String?   @db.VarChar(150)
+  Divulgacao           String?   @db.VarChar(30)
+  DiaVencimento        Int?
+  DiaSemana            String?   @db.VarChar(10)
+  DiaFaturamento1      Int?
+  DiaFaturamento2      Int?
+  DataInicioCiclo      DateTime? @map("data_inicio_ciclo") @db.Date
+  DataFimCiclo         DateTime? @map("data_fim_ciclo") @db.Date
+  EMail2               String?   @db.VarChar(255)
+  InativoDesde         DateTime? @db.DateTime
+  NContribuinte        String?   @db.VarChar(1)
+  CodNum               Int?
+  Numero               String?   @db.VarChar(50)
+  ComplementoEndereco  String?   @db.VarChar(30)
+  CodMun               Int?
+  Anotacoes            String?   @db.VarChar(255)
+  IESubstitutivo       String?   @db.VarChar(15)
+  CodPais              String?   @db.VarChar(5)
+  Iss                  Float?
+  CRT                  String?   @db.VarChar(70)
+  RegimeApuracao       String?   @db.VarChar(20)
+  ICMS                 Float?
+  Inclui_IpiBCIcms     String?   @db.VarChar(1)
+  CreditoICMS          String?   @db.VarChar(1)
+  SujeitoIPI           String?   @db.VarChar(1)
+  Bonificacao          String?   @db.VarChar(1)
+  Marca                String?   @db.VarChar(1)
+  Tipo_Preco           String?   @db.VarChar(2)
+  CodBan               Int?
+  DataInativo          DateTime? @db.DateTime
+  IsentoPendencia      String?   @db.VarChar(1)
+  IsentoEncargo        String?   @db.VarChar(1)
+  Revendedor           String?   @db.VarChar(1)
+  TelCliente           String?   @db.VarChar(255)
+  UltimaProposta       DateTime? @db.DateTime
+  UltimoPedido         DateTime? @db.DateTime
+  UltimaVenda          DateTime? @db.DateTime
+  PlanoAcao            DateTime? @db.DateTime
+  NumeroVenda          Int?
+  RetornoEntrega       DateTime? @db.DateTime
+  DataPosVenda         DateTime? @db.DateTime
+  Peso                 Float?
+  CodCen               Int?
+  ProximoContato       DateTime? @db.DateTime
+  UltimoContato        DateTime? @db.DateTime
+  Sinc1                String?   @db.VarChar(1)
+  Sinc2                String?   @db.VarChar(1)
+  Sinc3                String?   @db.VarChar(1)
+  Sinc4                String?   @db.VarChar(1)
+  Sinc5                String?   @db.VarChar(1)
+  Sinc                 String?   @db.VarChar(1)
+  CodVen3              Int?
+  Comissao3            Float?
+  CepEmp               String?   @db.VarChar(9)
+  EnderecoEmp          String?   @db.VarChar(60)
+  BairroEmp            String?   @db.VarChar(25)
+  CidadeEmp            String?   @db.VarChar(20)
+  EstadoEmp            String?   @db.VarChar(2)
+  TelEmp               String?   @db.VarChar(14)
+  Pendencia            String?   @db.VarChar(1)
+  Referencias3         String?   @db.VarChar(80)
+  Referencias4         String?   @db.VarChar(80)
+  Referencias3_CPF     String?   @db.VarChar(18)
+  Referencias4_CPF     String?   @db.VarChar(18)
+  Proposta             String?   @db.VarChar(255)
+  RedeSocial           String?   @db.VarChar(100)
+  ValorContratual      Float?
+  CodVen4              Int?
+  Comissao4            Float?
+  Estado_Civil         String?   @db.VarChar(15)
+  IsentoComissao       String?   @db.VarChar(1)
+  Anexo1               String?   @db.VarChar(150)
+  Anexo2               String?   @db.VarChar(150)
+  Anexo3               String?   @db.VarChar(150)
+  Anexo4               String?   @db.VarChar(150)
+  Anexo5               String?   @db.VarChar(150)
+  Anexo6               String?   @db.VarChar(150)
+  Anexo7               String?   @db.VarChar(150)
+  Anexo8               String?   @db.VarChar(150)
+  Anexo9               String?   @db.VarChar(150)
+  Anexo10              String?   @db.VarChar(150)
+  Suframa              String?   @db.VarChar(10)
+  ValeSValidade        String?   @db.VarChar(1)
+  Pix                  String?   @db.VarChar(50)
+  IsencaoICMS          String?   @db.VarChar(1)
+  Perfil               String?   @db.Text
+  Apontamento          String?   @db.Text
+  ReducaoICMS          Float?
+  IRRetido             String?   @db.VarChar(1)
+  DataSinc             DateTime? @db.DateTime
+  CSTPisCofins         String?   @db.VarChar(2)
+  DataAtivo            DateTime? @db.DateTime
+  Altura               Float?
+  Hash                 String?   @db.VarChar(20)
+  ImuneInativo         String?   @db.VarChar(1)
+  Raca                 String?   @db.VarChar(50)
+  Genero               String?   @db.VarChar(20)
+
+  @@index([Cep], map: "IndCliente_CEP")
+  @@index([Complemento, Cliente], map: "IndCliente_Complemento")
+  @@index([Razao, Cliente], map: "IndCliente_Razao")
+  @@index([Cliente], map: "IndNome")
+  @@index([CGC], map: "IndNome_CGC")
+  @@index([CPF], map: "IndNome_CPF")
+  @@index([Estado], map: "Ndx_Clientes_Estado")
+}
+
+model Senha {
+  CodUsu            Int       @id(map: "PK_Senha")
+  CodUsu2           Int?
+  CodUsu1           Int?
+  Usuario           String?   @db.VarChar(20)
+  Senha             String?   @db.VarChar(4)
+  Compromisso       String?   @db.VarChar(1)
+  Data              DateTime? @db.DateTime
+  DescMaximo        Decimal?  @db.Decimal(12, 3)
+  Caminho           String?   @db.VarChar(60)
+  EstoqueLocal      Int?
+  OP1               String?   @db.VarChar(1)
+  OP2               String?   @db.VarChar(1)
+  OP3               String?   @db.VarChar(1)
+  OP4               String?   @db.VarChar(1)
+  OP5               String?   @db.VarChar(1)
+  OP6               String?   @db.VarChar(1)
+  OP7               String?   @db.VarChar(1)
+  OP8               String?   @db.VarChar(1)
+  OP9               String?   @db.VarChar(1)
+  OP10              String?   @db.VarChar(1)
+  OP11              String?   @db.VarChar(1)
+  OP12              String?   @db.VarChar(1)
+  OP13              String?   @db.VarChar(1)
+  OP14              String?   @db.VarChar(1)
+  OP15              String?   @db.VarChar(1)
+  OP16              String?   @db.VarChar(1)
+  OP17              String?   @db.VarChar(1)
+  OP18              String?   @db.VarChar(1)
+  OP19              String?   @db.VarChar(1)
+  OP20              String?   @db.VarChar(1)
+  OP21              String?   @db.VarChar(1)
+  OP22              String?   @db.VarChar(1)
+  OP23              String?   @db.VarChar(1)
+  OP24              String?   @db.VarChar(1)
+  OP25              String?   @db.VarChar(1)
+  Op26              String?   @db.VarChar(1)
+  Op27              String?   @db.VarChar(1)
+  Op28              String?   @db.VarChar(1)
+  Op29              String?   @db.VarChar(1)
+  Op30              String?   @db.VarChar(1)
+  OP31              String?   @db.VarChar(1)
+  OP32              String?   @db.VarChar(1)
+  OP33              String?   @db.VarChar(1)
+  OP34              String?   @db.VarChar(1)
+  OP35              String?   @db.VarChar(1)
+  OP36              String?   @db.VarChar(1)
+  OP37              String?   @db.VarChar(1)
+  OP38              String?   @db.VarChar(1)
+  OP39              String?   @db.VarChar(1)
+  OP40              String?   @db.VarChar(1)
+  OP41              String?   @db.VarChar(1)
+  OP42              String?   @db.VarChar(1)
+  OP43              String?   @db.VarChar(1)
+  OP44              String?   @db.VarChar(1)
+  OP45              String?   @db.VarChar(1)
+  OP46              String?   @db.VarChar(1)
+  OP47              String?   @db.VarChar(1)
+  OP48              String?   @db.VarChar(1)
+  OP49              String?   @db.VarChar(1)
+  OP50              String?   @db.VarChar(1)
+  OP51              String?   @db.VarChar(1)
+  OP52              String?   @db.VarChar(1)
+  OP53              String?   @db.VarChar(1)
+  OP54              String?   @db.VarChar(1)
+  OP55              String?   @db.VarChar(1)
+  OP56              String?   @db.VarChar(1)
+  OP57              String?   @db.VarChar(1)
+  OP58              String?   @db.VarChar(1)
+  OP59              String?   @db.VarChar(1)
+  OP60              String?   @db.VarChar(1)
+  OP61              String?   @db.VarChar(1)
+  OP62              String?   @db.VarChar(1)
+  OP63              String?   @db.VarChar(1)
+  OP64              String?   @db.VarChar(1)
+  OP65              String?   @db.VarChar(1)
+  OP66              String?   @db.VarChar(1)
+  OP67              String?   @db.VarChar(1)
+  OP68              String?   @db.VarChar(1)
+  OP69              String?   @db.VarChar(1)
+  OP70              String?   @db.VarChar(1)
+  OP71              String?   @db.VarChar(1)
+  OP72              String?   @db.VarChar(1)
+  OP73              String?   @db.VarChar(1)
+  OP74              String?   @db.VarChar(1)
+  OP75              String?   @db.VarChar(1)
+  Anotacoes         String?   @db.Text
+  Agente            String?   @db.VarChar(10)
+  OP76              String?   @db.VarChar(1)
+  Op77              String?   @db.VarChar(1)
+  Op78              String?   @db.VarChar(1)
+  Op79              String?   @db.VarChar(1)
+  Op80              String?   @db.VarChar(1)
+  Op81              String?   @db.VarChar(1)
+  Op82              String?   @db.VarChar(1)
+  Op83              String?   @db.VarChar(1)
+  Op84              String?   @db.VarChar(1)
+  LogSQL            String?   @db.VarChar(20)
+  EMail             String?   @db.VarChar(40)
+  Op85              String?   @db.VarChar(1)
+  Op86              String?   @db.VarChar(1)
+  Op87              String?   @db.VarChar(1)
+  Op88              String?   @db.VarChar(1)
+  Op89              String?   @db.VarChar(1)
+  Op90              String?   @db.VarChar(1)
+  DescMaximoAtacado Float?
+  Op91              String?   @db.VarChar(1)
+  Op92              String?   @db.VarChar(1)
+  Op93              String?   @db.VarChar(1)
+  Op94              String?   @db.VarChar(1)
+  Op95              String?   @db.VarChar(1)
+  Op96              String?   @db.VarChar(1)
+  Op97              String?   @db.VarChar(1)
+  Op98              String?   @db.VarChar(1)
+  Tipo_Preco        String?   @db.VarChar(2)
+  Op99              String?   @db.VarChar(1)
+  Op100             String?   @db.VarChar(1)
+  Inativo           String?   @db.VarChar(1)
+  CodBan            Int?
+  Sinc1             String?   @db.VarChar(1)
+  Sinc2             String?   @db.VarChar(1)
+  Sinc3             String?   @db.VarChar(1)
+  Sinc4             String?   @db.VarChar(1)
+  Sinc5             String?   @db.VarChar(1)
+  Sinc              String?   @db.VarChar(1)
+  PDV1              Int?
+  PDV2              Int?
+  PDV3              Int?
+  PDV4              Int?
+  PDV5              Int?
+  PDV6              Int?
+  PDV7              Int?
+  PDV8              Int?
+  PDV9              Int?
+  PDV10             Int?
+  PontuacaoMinima   Float?
+  Status            String?   @db.VarChar(10)
+  Op101             String?   @db.VarChar(1)
+  Op102             String?   @db.VarChar(1)
+  Op103             String?   @db.VarChar(1)
+  TotalMaximoCompra Float?
+  Op104             String?   @db.VarChar(1)
+  TrabalhoInicio    String?   @db.VarChar(5)
+  TrabalhoFim       String?   @db.VarChar(5)
+  TrabalhoDom       String?   @db.VarChar(1)
+  TrabalhoSeg       String?   @db.VarChar(1)
+  TrabalhoTer       String?   @db.VarChar(1)
+  TrabalhoQua       String?   @db.VarChar(1)
+  TrabalhoQui       String?   @db.VarChar(1)
+  TrabalhoSex       String?   @db.VarChar(1)
+  TrabalhoSab       String?   @db.VarChar(1)
+  DescMaximoST      Float?
+  EmailAlternativo  String?   @db.VarChar(100)
+  CodUsu3           Int?
+  CodUsu3Data       DateTime? @db.DateTime
+  CodUsu3Hora       String?   @db.VarChar(5)
+  Op105             String?   @db.VarChar(1)
+  Op106             String?   @db.VarChar(1)
+  HistoricoVendas   String?   @db.VarChar(1)
+  PDV               Int?
+  Spool             String?   @db.VarChar(3)
+
+  @@index([Usuario], map: "Ndx_Senha")
+}
+
+model Segmento {
+  CodSeg    Int       @id(clustered: false, map: "PK_Segmento")
+  Segmento  String?   @db.VarChar(40)
+  CodGrpSeg Int?
+  Comissao  Decimal?  @db.Decimal(12, 3)
+  Plano     String?   @db.VarChar(20)
+  CNAE      String?   @db.VarChar(10)
+  CLIENTEs  CLIENTEs[]
+
+  @@index([Segmento, CodSeg], map: "Ndx_Segmento")
+}
