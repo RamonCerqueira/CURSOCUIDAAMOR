@@ -5,6 +5,9 @@ import { Prisma } from '@prisma/client'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
 import { StudentRegistrationError, validateStudentRegistration } from '@/lib/studentRegistration'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 /** Consulta o cadastro principal do SoftCare. O POST cadastra uma pessoa no segmento Aluno. */
 export async function GET(request: Request) {
   const auth = await requireCourseAdmin()
