@@ -436,3 +436,20 @@ body:has(.cuida-document) { background:#fff; color:#27344c; }
 .cuida-section-title { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 14px; }
 .cuida-section-title h3 { margin:0; font-size:16px; font-weight:750; }
 
+
+/* 15. Matrícula: cabeçalho, ações e seleção de aluno */
+.cuida-enroll-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; padding:20px 22px; border:1px solid #f0d8e4; border-radius:var(--radius-l); background:linear-gradient(115deg,#fff0f6,#fff 80%); }
+.cuida-enroll-head h3 { margin:6px 0 4px; font-size:20px; font-weight:800; letter-spacing:-.02em; }
+.cuida-enroll-head p { margin:0; color:var(--muted); font-size:13px; }
+.cuida-enroll-badges { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.cuida-action-row { display:flex; flex-wrap:wrap; gap:10px; }
+.cuida-chosen { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--primary-line); border-radius:var(--radius-s); background:#fff9fc; }
+.cuida-chosen > div { flex:1; min-width:0; }
+.cuida-chosen strong { display:block; color:var(--ink); font-size:14px; }
+.cuida-chosen small { color:var(--muted); font-size:12px; }
+.cuida-results { display:flex; flex-direction:column; border:1px solid var(--line); border-radius:var(--radius-s); background:#fff; overflow:hidden; }
+.cuida-results button { display:flex; align-items:center; gap:12px; padding:10px 12px; border:0; border-bottom:1px solid var(--line-soft); background:#fff; text-align:left; }
+.cuida-results button:last-child { border-bottom:0; }
+.cuida-results button:hover { background:#fff1f6; }
+.cuida-results strong { display:block; font-size:14px; color:var(--ink); }
+.cuida-results small { color:var(--muted); font-size:12px; }

@@ -1,6 +1,7 @@
 'use client'
 
 import { StudentProfileView } from '@/components/StudentProfileView'
+import { NewEnrollmentForm } from '@/components/NewEnrollmentForm'
 import { useCallback, useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminPageHeader, ActionMenu, Drawer, Field, FilterTabs, InitialAvatar, SearchField, StatusBadge, EmptyState, Notice, Pagination, useTablePage } from '@/components/AdminUI'
@@ -147,15 +148,8 @@ export default function AdminAlunosPage() {
     <Drawer wide open={profileFor!==null} onClose={()=>setProfileFor(null)} title="Perfil do aluno" description="Histórico acadêmico, avaliações e aptidão profissional.">
       {profileFor&&<StudentProfileView id={profileFor.CodCli}/>}
     </Drawer>
-    <Drawer open={linkFor!==null} onClose={()=>setLinkFor(null)} title="Vincular aluno a um curso" description={linkFor?.Nome}>
-      {message&&<Notice>{message}</Notice>}
-      <section className="cuida-panel"><div className="cuida-panel-body">
-        <form onSubmit={e=>{e.preventDefault();if(linkFor)linkCourse(linkFor)}} className="cuida-form-grid">
-          <Field label="Curso" required wide><select required value={courseId} onChange={e=>{setCourseId(e.target.value);setTurmaId('')}}><option value="">Selecione um curso ativo</option>{courses.map(c=><option key={c.CursoId} value={c.CursoId}>{c.Nome}</option>)}</select></Field>
-          <Field label="Turma" wide><select value={turmaId} onChange={e=>setTurmaId(e.target.value)}><option value="">Sem turma específica</option>{turmas.filter(t=>!courseId||t.CursoId===Number(courseId)).map(t=><option key={t.TurmaId} value={t.TurmaId}>{t.Nome}</option>)}</select></Field>
-          <div className="cuida-field wide cuida-form-actions"><button disabled={!courseId} className="cuida-button primary"><BookOpen size={14}/>Vincular curso</button></div>
-        </form>
-      </div></section>
+    <Drawer open={linkFor!==null} onClose={()=>setLinkFor(null)} title="Matricular aluno em um curso" description={linkFor?.Nome}>
+      {linkFor&&<NewEnrollmentForm person={{CodCli:linkFor.CodCli,Nome:linkFor.Nome,Email:linkFor.Email}} onCancel={()=>setLinkFor(null)} onCreated={info=>{setLinkFor(null);setMessage(`${info.nome} matriculado com sucesso.`);load(query,funcao,serverPage,pageSize)}}/>}
     </Drawer>
   </main></div>
 }
