@@ -25,9 +25,19 @@ export async function POST(request: Request) {
     const [version] = await prisma.$queryRaw<any[]>`SELECT TOP 1 VersaoId FROM dbo.CursoVersao WHERE CursoId=${cursoId} ORDER BY NumeroVersao DESC`
     if (!version) return NextResponse.json({ sucesso: false, mensagem: 'O curso precisa ter uma versão de conteúdo.' }, { status: 400 })
     const v=classForm({...b,status:b.status||'PLANEJADA'})
+    const dInicio = v.dataInicio ? v.dataInicio.toISOString().slice(0, 10) : ''
+    const dFim = v.dataFim ? v.dataFim.toISOString().slice(0, 10) : ''
+    const dInscInicio = v.inscricaoInicio ? v.inscricaoInicio.toISOString().slice(0, 10) : ''
+    const dInscFim = v.inscricaoFim ? v.inscricaoFim.toISOString().slice(0, 10) : ''
     const row=await prisma.$transaction(async tx=>{
       const [created]=await tx.$queryRaw<any[]>`INSERT INTO dbo.CursoTurma(CursoId,VersaoId,Codigo,Nome,Status,DataInicio,DataFim,Turno,Horario,Modalidade,Local,Vagas,InscricaoInicio,InscricaoFim,CargaHoraria,NotaMinima,FrequenciaMinima)
-        OUTPUT INSERTED.TurmaId VALUES(${cursoId},${version.VersaoId},${v.codigo},${v.nome},${v.status},${v.dataInicio},${v.dataFim},${v.turno},${v.horario},${v.modalidade},${v.local},${v.vagas},${v.inscricaoInicio},${v.inscricaoFim},${v.cargaHoraria},${v.notaMinima},${v.frequenciaMinima})`
+        OUTPUT INSERTED.TurmaId VALUES(${cursoId},${version.VersaoId},${v.codigo},${v.nome},${v.status},
+          TRY_CONVERT(date, NULLIF(${dInicio}, '')),
+          TRY_CONVERT(date, NULLIF(${dFim}, '')),
+          ${v.turno},${v.horario},${v.modalidade},${v.local},${v.vagas},
+          TRY_CONVERT(date, NULLIF(${dInscInicio}, '')),
+          TRY_CONVERT(date, NULLIF(${dInscFim}, '')),
+          ${v.cargaHoraria},${v.notaMinima},${v.frequenciaMinima})`
       await auditTransaction(tx,auth.actor,'CRIAR','TURMA',created.TurmaId,v)
       return created
     })

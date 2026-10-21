@@ -41,19 +41,27 @@ export async function POST(request: Request) {
     if(!['ADMIN','SUPERVISOR'].includes(auth.actor.role))return NextResponse.json({sucesso:false,mensagem:'Somente o administrador configura cursos.'},{status:403})
     let rules
     try{rules=parseStageRules(body.avaliacaoConfig)}catch(error){return NextResponse.json({sucesso:false,mensagem:(error as Error).message},{status:400})}
+    const vigenteParam = body.vigenteDesde ? new Date(body.vigenteDesde).toISOString().slice(0, 10) : ''
     const curso = await prisma.$transaction(async (tx) => {
       const [created] = await tx.$queryRaw<any[]>`
         INSERT INTO dbo.CursoCatalogo (Codigo, Nome, Descricao, CargaHoraria, PublicoAlvo, Status, PercentualMinimoAprovacao,AvaliacaoConfig)
         OUTPUT INSERTED.CursoId, INSERTED.Nome, INSERTED.Codigo, INSERTED.Status
         VALUES (${String(body.codigo || '').trim() || null}, ${nome}, ${String(body.descricao || '').trim() || null}, ${body.cargaHoraria ? Number(body.cargaHoraria) : null}, ${String(body.publicoAlvo || '').trim() || null}, ${body.status === 'RASCUNHO' ? 'RASCUNHO' : 'ATIVO'}, ${percentualMinimoAprovacao},${JSON.stringify(rules)})
       `
-      await tx.$executeRaw`INSERT INTO dbo.CursoVersao (CursoId, NumeroVersao, Titulo, VigenteDesde) VALUES (${created.CursoId}, 1, ${String(body.tituloVersao || 'Versão 1').trim()}, ${body.vigenteDesde ? new Date(body.vigenteDesde) : null})`
+      await tx.$executeRaw`
+        INSERT INTO dbo.CursoVersao (CursoId, NumeroVersao, Titulo, VigenteDesde)
+        VALUES (${created.CursoId}, 1, ${String(body.tituloVersao || 'Versão 1').trim()}, TRY_CONVERT(date, NULLIF(${vigenteParam}, '')))
+      `
       return created
     })
     await auditCourse(auth.actor.id, auth.actor.role, 'CRIAR', 'CURSO', curso.CursoId, { nome, percentualMinimoAprovacao })
     return NextResponse.json({ sucesso: true, data: curso }, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Falha ao criar curso:', error)
-    return NextResponse.json({ sucesso: false, mensagem: 'Não foi possível criar o curso. Verifique se o código já está em uso.' }, { status: 500 })
+    const msg = String(error?.message || '')
+    if (msg.includes('UX_CursoCatalogo_Codigo') || msg.includes('duplicate key') || error?.code === 'P2002') {
+      return NextResponse.json({ sucesso: false, mensagem: 'Já existe um curso cadastrado com este código.' }, { status: 400 })
+    }
+    return NextResponse.json({ sucesso: false, mensagem: 'Não foi possível criar o curso. ' + (error?.message || '') }, { status: 500 })
   }
 }

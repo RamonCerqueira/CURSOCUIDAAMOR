@@ -15,7 +15,16 @@ export async function PATCH(request:Request,{params}:{params:{id:string}}){
       const v=classForm(merged)
       const [count]=await tx.$queryRaw<any[]>`SELECT COUNT(*) AS Total FROM dbo.CursoVinculo WHERE TurmaId=${id} AND Situacao<>N'CANCELADO'`
       if(v.vagas!=null&&v.vagas<count.Total)throw Error('As vagas não podem ser menores que as matrículas existentes.')
-      await tx.$executeRaw`UPDATE dbo.CursoTurma SET Nome=${v.nome},Codigo=${v.codigo},DataInicio=${v.dataInicio},DataFim=${v.dataFim},InscricaoInicio=${v.inscricaoInicio},InscricaoFim=${v.inscricaoFim},Turno=${v.turno},Horario=${v.horario},Modalidade=${v.modalidade},Local=${v.local},Vagas=${v.vagas},CargaHoraria=${v.cargaHoraria},NotaMinima=${v.notaMinima},FrequenciaMinima=${v.frequenciaMinima},Status=${v.status} WHERE TurmaId=${id}`
+      const dInicio = v.dataInicio ? v.dataInicio.toISOString().slice(0, 10) : ''
+      const dFim = v.dataFim ? v.dataFim.toISOString().slice(0, 10) : ''
+      const dInscInicio = v.inscricaoInicio ? v.inscricaoInicio.toISOString().slice(0, 10) : ''
+      const dInscFim = v.inscricaoFim ? v.inscricaoFim.toISOString().slice(0, 10) : ''
+      await tx.$executeRaw`UPDATE dbo.CursoTurma SET Nome=${v.nome},Codigo=${v.codigo},
+        DataInicio=TRY_CONVERT(date, NULLIF(${dInicio}, '')),
+        DataFim=TRY_CONVERT(date, NULLIF(${dFim}, '')),
+        InscricaoInicio=TRY_CONVERT(date, NULLIF(${dInscInicio}, '')),
+        InscricaoFim=TRY_CONVERT(date, NULLIF(${dInscFim}, '')),
+        Turno=${v.turno},Horario=${v.horario},Modalidade=${v.modalidade},Local=${v.local},Vagas=${v.vagas},CargaHoraria=${v.cargaHoraria},NotaMinima=${v.notaMinima},FrequenciaMinima=${v.frequenciaMinima},Status=${v.status} WHERE TurmaId=${id}`
       await auditTransaction(tx,auth.actor,'EDITAR','TURMA',id,{anterior:old,novo:v})
     })
     return NextResponse.json({sucesso:true})

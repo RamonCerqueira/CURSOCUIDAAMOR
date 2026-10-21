@@ -49,7 +49,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
         const [current] = await tx.$queryRaw<any[]>`SELECT TOP 1 VersaoId,NumeroVersao FROM dbo.CursoVersao WHERE CursoId=${cursoId} ORDER BY NumeroVersao DESC`
         if (!current) throw new Error('Curso não encontrado.')
         const nextNumber = Number(current.NumeroVersao) + 1
-        const [created] = await tx.$queryRaw<any[]>`INSERT INTO dbo.CursoVersao (CursoId,NumeroVersao,Titulo,VigenteDesde) OUTPUT INSERTED.VersaoId VALUES (${cursoId},${nextNumber},${String(body.titulo || `Versão ${nextNumber}`).trim()},${body.vigenteDesde ? new Date(body.vigenteDesde) : null})`
+        const vigenteParam = body.vigenteDesde ? new Date(body.vigenteDesde).toISOString().slice(0, 10) : ''
+        const [created] = await tx.$queryRaw<any[]>`
+          INSERT INTO dbo.CursoVersao (CursoId,NumeroVersao,Titulo,VigenteDesde)
+          OUTPUT INSERTED.VersaoId
+          VALUES (${cursoId},${nextNumber},${String(body.titulo || `Versão ${nextNumber}`).trim()},TRY_CONVERT(date, NULLIF(${vigenteParam}, '')))
+        `
         const modules = await tx.$queryRaw<any[]>`SELECT ModuloId,Titulo,Descricao,Ordem FROM dbo.CursoModulo WHERE VersaoId=${current.VersaoId} ORDER BY Ordem,ModuloId`
         for (const module of modules) {
           const [newModule] = await tx.$queryRaw<any[]>`INSERT INTO dbo.CursoModulo (VersaoId,Titulo,Descricao,Ordem) OUTPUT INSERTED.ModuloId VALUES (${created.VersaoId},${module.Titulo},${module.Descricao},${module.Ordem})`
