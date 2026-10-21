@@ -93,3 +93,75 @@ export function ActionMenu({ items }: {items:{label:string;onClick?:()=>void;hre
   },[open])
   return <div ref={ref} className="cuida-action-menu"><button ref={button} type="button" className="cuida-icon-button" aria-label="Ações do registro" aria-expanded={open} onClick={()=>{const rect=button.current!.getBoundingClientRect();setPosition({top:Math.min(rect.bottom+5,window.innerHeight-280),right:window.innerWidth-rect.right});setOpen(!open)}}><MoreHorizontal size={18}/></button>{open&&<div className="cuida-menu" style={position}>{items.map(item=>item.href?<a key={item.label} href={item.href} target="_blank" rel="noreferrer" onClick={()=>setOpen(false)}>{item.label}</a>:<button key={item.label} type="button" disabled={item.disabled} className={item.danger?'danger':''} onClick={()=>{setOpen(false);item.onClick?.()}}>{item.label}</button>)}</div>}</div>
 }
+
+export function ToggleSwitch({
+  checked,
+  onChange,
+  label,
+  description,
+  id,
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  label?: string
+  description?: string
+  id?: string
+}) {
+  return (
+    <label className="cuida-switch-wrap" htmlFor={id}>
+      <button
+        id={id}
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`cuida-switch ${checked ? 'checked' : ''}`}
+      >
+        <span className="cuida-switch-thumb" />
+      </button>
+      {label && (
+        <div className="cuida-switch-text">
+          <span className="cuida-switch-label">{label}</span>
+          {description && <span className="cuida-switch-desc">{description}</span>}
+        </div>
+      )}
+    </label>
+  )
+}
+
+export function SegmentedSwitch<T extends string>({
+  value,
+  onChange,
+  options,
+  label,
+}: {
+  value: T
+  onChange: (val: T) => void
+  options: { value: T; label: string; count?: number }[]
+  label?: string
+}) {
+  return (
+    <div className="cuida-segmented-wrap">
+      {label && <span className="cuida-segmented-label">{label}</span>}
+      <div className="cuida-segmented" role="radiogroup" aria-label={label}>
+        {options.map((opt) => {
+          const isSelected = value === opt.value
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              className={`cuida-segmented-item ${isSelected ? 'selected' : ''}`}
+              onClick={() => onChange(opt.value)}
+            >
+              <span>{opt.label}</span>
+              {opt.count !== undefined && <span className="cuida-segmented-count">{opt.count}</span>}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
