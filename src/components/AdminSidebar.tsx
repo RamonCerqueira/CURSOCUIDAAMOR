@@ -61,7 +61,6 @@ export function AdminSidebar({ portal = 'admin' }: {portal?:'admin'|'docente'}) 
     ] },
     ...(['ADMIN','SUPERVISOR'].includes(role) ? [{ label: 'Administração', items: [
       { name: 'Equipe e acessos', path: '/admin/equipe', icon: ShieldCheck },
-      { name: 'Visões profissionais', path: '/admin/visoes', icon: LayoutDashboard },
       { name: 'Configurações', path: '/admin/configuracoes', icon: Settings },
     ] }] : []),
   ])
