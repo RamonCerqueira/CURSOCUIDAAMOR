@@ -128,7 +128,7 @@ Considerando o escopo completo da plataforma, integração nativa com o banco do
 - **Opção 2 (Parcelamento em 3x):**
   - **3 parcelas de R$ 2.166,66** (Entrada + 30 dias + 60 dias)
 - **Opção 3 (Pagamento à vista com desconto):**
-  - Pagamento único no aceite com 5% de desconto: **R$ 6.175,00**
+  - Pagamento único no aceite com desconto: **R$ 6.000,00**
 
 
 ---
@@ -139,9 +139,9 @@ Após a entrega do sistema e término do período de garantia, recomenda-se a co
 
 | Plano | Cobertura | Horas Inclusas | Valor Mensal |
 |:---|:---|:---:|:---:|
-| **Básico (Sustentação)** | Monitoramento, backups, correções e suporte técnico N3 | Até 10h/mês | **R$ 1.200,00/mês** |
-| **Profissional (Evolutivo)** | Suporte + pequenas melhorias contínuas, novos relatórios e ajustes de regras | Até 25h/mês | **R$ 2.600,00/mês** |
-| **Dedicado** | Plantão prioritário, novas features e suporte a eventos de inscrição em massa | Até 50h/mês | **R$ 4.800,00/mês** |
+| **Básico (Sustentação)** | Monitoramento, backups, correções e suporte técnico N3 | Até 10h/mês | **R$ 800,00/mês** |
+| **Profissional (Evolutivo)** | Suporte + pequenas melhorias contínuas, novos relatórios e ajustes de regras | Até 25h/mês | **R$ 1.500,00/mês** |
+| **Dedicado** | Plantão prioritário, novas features e suporte a eventos de inscrição em massa | Até 50h/mês | **R$ 2.200,00/mês** |
 
 ---
 
@@ -150,7 +150,6 @@ Após a entrega do sistema e término do período de garantia, recomenda-se a co
 Custos diretos de servidores e infraestrutura (pagos diretamente aos provedores):
 - **Servidor da Aplicação (Next.js):**
   - Opção VPS dedicada (Linux Ubuntu com Node.js / PM2 / Nginx): **R$ 120,00 a R$ 250,00 / mês** (ex.: Hetzner, Hostinger, DigitalOcean ou AWS Lightsail).
-  - Ou execução no servidor IIS / Windows Server local da própria instituição (custo adicional: R$ 0,00 de hospedagem).
 - **Banco de Dados (SQL Server):**
   - Aproveitamento da infraestrutura atual do ERP SoftCare (sem custo adicional de licenciamento de banco).
 - **Certificado SSL / HTTPS:** Gratuito via Let's Encrypt / Cloudflare.
@@ -163,8 +162,7 @@ Custos diretos de servidores e infraestrutura (pagos diretamente aos provedores)
 ### Itens Inclusos na Entrega:
 1. **Código-Fonte Completo:** Propriedade intelectual 100% transferida ao cliente, com código limpo, tipado em TypeScript e sem dependências ocultas.
 2. **Garantia de 90 dias (Bug Fix):** Correção sem custos adicionais de qualquer inconformidade ou falha técnica não identificada durante a homologação.
-3. **Manual de Instalação e Configuração:** Documentação de variáveis de ambiente (`.env.example`), scripts de automação e rotinas de manutenção.
-4. **Treinamento Operacional:** Sessão de alinhamento com a equipe administrativa e pedagógica (até 3 horas remotas).
+3. **Treinamento Operacional:** Sessão de alinhamento com a equipe administrativa e pedagógica (até 3 horas remotas).
 
 ---
 
