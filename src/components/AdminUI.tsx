@@ -52,7 +52,7 @@ export function Field({ label, required, children, wide }: {label:string;require
   return <label className={`cuida-field ${wide?'wide':''}`}><span>{label}{required&&<b aria-label="obrigatório"> *</b>}</span>{children}</label>
 }
 
-export function Drawer({ open, onClose, title, description, children }: {open:boolean;onClose:()=>void;title:string;description?:string;children:ReactNode}) {
+export function Drawer({ open, onClose, title, description, children, wide = false }: {open:boolean;onClose:()=>void;title:string;description?:string;children:ReactNode;wide?:boolean}) {
   const ref=useRef<HTMLDivElement>(null),titleId=useId(),closeRef=useRef(onClose)
   closeRef.current=onClose
   useEffect(()=>{
@@ -73,7 +73,7 @@ export function Drawer({ open, onClose, title, description, children }: {open:bo
     return()=>{document.body.style.overflow=overflow;document.removeEventListener('keydown',key);previous?.focus()}
   },[open])
   if(!open)return null
-  return <div className="cuida-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className="cuida-drawer"><header><div><h2 id={titleId}>{title}</h2>{description&&<p>{description}</p>}</div><button type="button" aria-label="Fechar painel" onClick={onClose}><X size={20}/></button></header><div className="cuida-drawer-body">{children}</div></div></div>
+  return <div className="cuida-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} className={`cuida-drawer${wide?' wide':''}`}><header><div><h2 id={titleId}>{title}</h2>{description&&<p>{description}</p>}</div><button type="button" aria-label="Fechar painel" onClick={onClose}><X size={20}/></button></header><div className="cuida-drawer-body">{children}</div></div></div>
 }
 
 export function ActionMenu({ items }: {items:{label:string;onClick?:()=>void;href?:string;danger?:boolean;disabled?:boolean}[]}) {

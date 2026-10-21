@@ -467,3 +467,11 @@ body:has(.cuida-document) { background:white;color:#27344c; }
 .cuida-admin .cuida-panel-header h2 {font-size:16px;}
 .cuida-admin .cuida-help {font-size:13px;line-height:1.65;}
 .cuida-admin .cuida-note-row small {display:block;white-space:pre-wrap;overflow-wrap:anywhere;}
+
+/* Etapa 1 do redesign: painel largo e menu agrupado. */
+.cuida-drawer.wide { width:min(1080px,96vw); }
+.cuida-admin .admin-nav-group { display:flex; flex-direction:column; gap:2px; margin-bottom:18px; }
+.cuida-admin .admin-nav-group > .admin-nav-label { padding:0 10px 6px; }
+.cuida-admin .is-collapsed .admin-nav-group { margin-bottom:10px; }
+.cuida-drawer-body .cuida-prof-hero { padding:20px; }
+.cuida-drawer-body .cuida-prof-metrics { margin:16px 0 20px; }

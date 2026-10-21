@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { LayoutDashboard, Users, BookOpen, ShieldCheck, ClipboardList, CalendarDays, BarChart3, LogOut, Menu, X, PanelLeftClose, PanelLeftOpen, GraduationCap } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, ShieldCheck, ClipboardList, CalendarDays, BarChart3, LogOut, Menu, X, PanelLeftClose, PanelLeftOpen, GraduationCap, Settings } from 'lucide-react'
 
 export function AdminSidebar({ portal = 'admin' }: {portal?:'admin'|'docente'}) {
   const pathname = usePathname()
@@ -43,22 +43,29 @@ export function AdminSidebar({ portal = 'admin' }: {portal?:'admin'|'docente'}) 
     try { await fetch('/api/auth/logout', { method: 'POST' }) }
     finally { window.location.href = '/login' }
   }
-  const navItems = portal === 'docente' ? [
-    { name:'Minhas turmas e avaliações',path:'/docente',icon:ClipboardList },
+  type NavItem = { name: string; path: string; icon: any }
+  const sections: { label: string; items: NavItem[] }[] = (portal === 'docente' ? [
+    { label: 'Minhas atividades', items: [{ name:'Minhas turmas e avaliações',path:'/docente',icon:ClipboardList }] },
   ] : [
-    { name: 'Coordenação', path: '/admin/coordenacao', icon: GraduationCap },
-    { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Alunos', path: '/admin/alunos', icon: Users },
-    { name: 'Gestão de Cursos', path: '/admin/cursos', icon: BookOpen },
-    { name: 'Turmas e frequência', path: '/admin/turmas', icon: CalendarDays },
-    { name: 'Relatórios', path: '/admin/relatorios', icon: BarChart3 },
-    { name: 'Vínculos e Notas', path: '/admin/vinculos', icon: ClipboardList },
-    ...(['ADMIN','SUPERVISOR'].includes(role) ? [
-      {name:'Visões profissionais',path:'/admin/visoes',icon:LayoutDashboard},
-      {name:'Equipe e acessos',path:'/admin/equipe',icon:ShieldCheck},
-      {name:'Configurações',path:'/admin/configuracoes',icon:ShieldCheck},
-    ] : []),
-  ]
+    { label: 'Visão geral', items: [
+      { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+      { name: 'Coordenação', path: '/admin/coordenacao', icon: GraduationCap },
+    ] },
+    { label: 'Acadêmico', items: [
+      { name: 'Alunos', path: '/admin/alunos', icon: Users },
+      { name: 'Cursos', path: '/admin/cursos', icon: BookOpen },
+      { name: 'Turmas e frequência', path: '/admin/turmas', icon: CalendarDays },
+      { name: 'Matrículas e notas', path: '/admin/vinculos', icon: ClipboardList },
+    ] },
+    { label: 'Gestão', items: [
+      { name: 'Relatórios', path: '/admin/relatorios', icon: BarChart3 },
+    ] },
+    ...(['ADMIN','SUPERVISOR'].includes(role) ? [{ label: 'Administração', items: [
+      { name: 'Equipe e acessos', path: '/admin/equipe', icon: ShieldCheck },
+      { name: 'Visões profissionais', path: '/admin/visoes', icon: LayoutDashboard },
+      { name: 'Configurações', path: '/admin/configuracoes', icon: Settings },
+    ] }] : []),
+  ])
   const roleLabel = ({ADMIN:'Administrador',SUPERVISOR:'Administrador',COORDENADORA:'Coordenadora',TEORICA:'Professora teórica',PRATICA:'Professora prática'} as Record<string,string>)[role] || 'Equipe de cursos'
   const initials = userName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'SC'
 
@@ -76,14 +83,16 @@ export function AdminSidebar({ portal = 'admin' }: {portal?:'admin'|'docente'}) 
           <div className="admin-brand-copy"><h1 className="font-extrabold text-[15px] leading-tight">CUIDA AMOR</h1><p className="text-xs text-slate-400 mt-1">PLATAFORMA DE CURSOS</p></div>
           <button type="button" className="admin-close-menu" aria-label="Fechar menu" onClick={() => setMobileOpen(false)}><X size={19} /></button>
         </div>
-        <p className="admin-nav-label">MENU PRINCIPAL</p>
         <nav className="admin-navigation" aria-label="Navegação administrativa">
-          {navItems.map(({ name, path, icon: Icon }) => {
-            const active = pathname === path || pathname.startsWith(`${path}/`)
-            return <Link key={path} href={path} onClick={() => setMobileOpen(false)} aria-current={active ? 'page' : undefined} title={name} className={`admin-nav-item ${active ? 'active' : ''}`}>
-              <Icon size={18} strokeWidth={active ? 2.2 : 1.8} /><span>{name}</span>{active && <span className="admin-nav-indicator" />}
-            </Link>
-          })}
+          {sections.map(section => <div key={section.label} className="admin-nav-group">
+            <p className="admin-nav-label">{section.label.toUpperCase()}</p>
+            {section.items.map(({ name, path, icon: Icon }) => {
+              const active = pathname === path || pathname.startsWith(`${path}/`)
+              return <Link key={path} href={path} onClick={() => setMobileOpen(false)} aria-current={active ? 'page' : undefined} title={name} className={`admin-nav-item ${active ? 'active' : ''}`}>
+                <Icon size={18} strokeWidth={active ? 2.2 : 1.8} /><span>{name}</span>{active && <span className="admin-nav-indicator" />}
+              </Link>
+            })}
+          </div>)}
         </nav>
       </div>
       <div className="admin-sidebar-bottom">

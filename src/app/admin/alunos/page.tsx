@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { StudentProfileView } from '@/components/StudentProfileView'
 import { useCallback, useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminPageHeader, ActionMenu, Drawer, Field, FilterTabs, InitialAvatar, SearchField, StatusBadge, EmptyState, Notice, Pagination, useTablePage } from '@/components/AdminUI'
@@ -41,6 +41,7 @@ export default function AdminAlunosPage() {
   }
   const [filtersOpen,setFiltersOpen] = useState(false)
   const [linkFor,setLinkFor] = useState<Person|null>(null)
+  const [profileFor,setProfileFor] = useState<Person|null>(null)
   const [serverPage,setServerPage]=useState(1),[pageSize,setPageSize]=useState(10),[total,setTotal]=useState(0)
   const paging={items:people,page:serverPage,pageSize,total,setPage:(page:number)=>load(query,funcao,page,pageSize),setPageSize:(size:number)=>{setPageSize(size);load(query,funcao,1,size)}}
 
@@ -113,9 +114,9 @@ export default function AdminAlunosPage() {
     <section className="cuida-panel">
       <FilterTabs value={funcao} onChange={value=>{setFuncao(value);load(query,value)}} items={[{value:'ALUNO',label:'Alunos',count:funcao==='ALUNO'?total:undefined},{value:'TODOS',label:'Todas as funções',count:funcao==='TODOS'?total:undefined}]}/>
       <div className="cuida-table-scroll"><table className="cuida-table"><thead><tr><th>Código</th><th>Aluno</th><th>E-mail</th><th>Telefone</th><th>Cursos</th><th>Função atual</th><th>Situação</th><th className="actions">Ações</th></tr></thead><tbody>{!loading&&paging.items.map(person=><tr key={person.CodCli}>
-        <td className="nowrap">#{person.CodCli}</td><td><div className="cuida-person-cell"><InitialAvatar name={person.Nome||'Sem nome'}/><Link className="font-semibold hover:underline" href={`/admin/alunos/${person.CodCli}`}>{person.Nome||'Sem nome'}</Link></div></td>
+        <td className="nowrap">#{person.CodCli}</td><td><div className="cuida-person-cell"><InitialAvatar name={person.Nome||'Sem nome'}/><button type="button" className="font-semibold hover:underline text-left" onClick={()=>setProfileFor(person)}>{person.Nome||'Sem nome'}</button></div></td>
         <td>{person.Email||'—'}</td><td className="nowrap">{person.Telefone||'—'}</td><td>{person.Cursos??'—'}</td><td><span className="cuida-badge neutral">{person.FuncaoAtual||'ALUNO'}</span></td><td><StatusBadge value={person.Situacao==='A'?'ATIVO':person.Situacao==='I'?'INATIVO':person.Situacao}/></td>
-        <td className="actions"><ActionMenu items={[{label:'Ver perfil e histórico',href:`/admin/alunos/${person.CodCli}`},{label:'Vincular a um curso',onClick:()=>setLinkFor(person)},{label:'Gerar ou redefinir acesso',onClick:()=>createAccess(person)}]}/></td>
+        <td className="actions"><ActionMenu items={[{label:'Ver perfil e histórico',onClick:()=>setProfileFor(person)},{label:'Vincular a um curso',onClick:()=>setLinkFor(person)},{label:'Gerar ou redefinir acesso',onClick:()=>createAccess(person)}]}/></td>
       </tr>)}</tbody></table></div>
       {loading?<EmptyState loading title="Carregando alunos..."/>:!people.length&&<EmptyState title="Nenhum aluno encontrado" description="Ajuste a pesquisa ou selecione outra função."/>}
       <Pagination {...paging}/>
@@ -142,6 +143,9 @@ export default function AdminAlunosPage() {
         </div></section>
         <div className="cuida-form-actions"><button type="button" disabled={saving} className="cuida-button" onClick={()=>setCreateOpen(false)}>Cancelar</button><button disabled={saving} className="cuida-button primary"><Save size={14}/>{saving?'Salvando...':'Cadastrar aluno'}</button></div>
       </form>
+    </Drawer>
+    <Drawer wide open={profileFor!==null} onClose={()=>setProfileFor(null)} title="Perfil do aluno" description="Histórico acadêmico, avaliações e aptidão profissional.">
+      {profileFor&&<StudentProfileView id={profileFor.CodCli}/>}
     </Drawer>
     <Drawer open={linkFor!==null} onClose={()=>setLinkFor(null)} title="Vincular aluno a um curso" description={linkFor?.Nome}>
       {message&&<Notice>{message}</Notice>}
