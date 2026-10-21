@@ -18,7 +18,7 @@ export default function AdminDashboardPage(){
    setLoading(true);setMessage('')
    const results=await Promise.allSettled([
      fetch('/api/admin/stats').then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.mensagem||'Falha nos indicadores.');setStats(j.data)}),
-     fetch('/api/admin/vinculos').then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.mensagem||'Falha nos vínculos.');setRecent((j.data||[]).slice(0,8))}),
+     fetch('/api/admin/vinculos?page=1&limit=8').then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.mensagem||'Falha nos vínculos.');setRecent((j.data||[]).slice(0,8))}),
      readAcademicReport().then(data=>{setRecords(data);setReportLoaded(true)})
    ])
    const failures=results.filter((r):r is PromiseRejectedResult=>r.status==='rejected')

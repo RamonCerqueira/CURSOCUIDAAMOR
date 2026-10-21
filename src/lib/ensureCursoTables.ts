@@ -22,6 +22,10 @@ export function ensureCursoTables() {
         IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_CursoCatalogo_Codigo' AND object_id = OBJECT_ID(N'dbo.CursoCatalogo'))
           CREATE UNIQUE INDEX UX_CursoCatalogo_Codigo ON dbo.CursoCatalogo(Codigo) WHERE Codigo IS NOT NULL;
 
+        IF COL_LENGTH(N'dbo.CursoCatalogo',N'PercentualMinimoAprovacao') IS NULL
+          ALTER TABLE dbo.CursoCatalogo ADD PercentualMinimoAprovacao DECIMAL(5,2) NULL
+            CONSTRAINT CK_CursoCatalogo_PercentualAprovacao CHECK (PercentualMinimoAprovacao BETWEEN 0 AND 100);
+
         IF OBJECT_ID(N'dbo.CursoVersao', N'U') IS NULL
         CREATE TABLE dbo.CursoVersao (
           VersaoId INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
@@ -199,6 +203,60 @@ export function ensureCursoTables() {
 
         IF COL_LENGTH(N'dbo.CursoNota',N'Peso') IS NULL ALTER TABLE dbo.CursoNota ADD Peso DECIMAL(8,2) NULL;
         IF COL_LENGTH(N'dbo.CursoNota',N'NotaMaxima') IS NULL ALTER TABLE dbo.CursoNota ADD NotaMaxima DECIMAL(8,2) NULL;
+
+        IF OBJECT_ID(N'dbo.CursoProfissional', N'U') IS NULL
+        CREATE TABLE dbo.CursoProfissional (
+          CodUsu INT NOT NULL PRIMARY KEY,
+          Perfil NVARCHAR(30) NOT NULL CONSTRAINT CK_CursoProfissional_Perfil CHECK (Perfil IN (N'ADMIN',N'SUPERVISOR',N'COORDENADORA',N'TEORICA',N'PRATICA')),
+          Ativo BIT NOT NULL DEFAULT 1,
+          AtualizadoEm DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+        );
+        IF OBJECT_ID(N'dbo.CursoProfissionalTurma', N'U') IS NULL
+        CREATE TABLE dbo.CursoProfissionalTurma (
+          CodUsu INT NOT NULL, TurmaId INT NOT NULL,
+          PRIMARY KEY (CodUsu,TurmaId),
+          FOREIGN KEY (CodUsu) REFERENCES dbo.CursoProfissional(CodUsu),
+          FOREIGN KEY (TurmaId) REFERENCES dbo.CursoTurma(TurmaId)
+        );
+        IF COL_LENGTH(N'dbo.CursoNota',N'Etapa') IS NULL
+          ALTER TABLE dbo.CursoNota ADD Etapa NVARCHAR(20) NULL;
+        IF COL_LENGTH(N'dbo.CursoNota',N'AvaliadorId') IS NULL
+          ALTER TABLE dbo.CursoNota ADD AvaliadorId INT NULL;
+      `)
+      await prisma.$executeRawUnsafe(`
+        DECLARE @roleConstraint sysname;
+        SELECT TOP 1 @roleConstraint=name FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID(N'dbo.CursoProfissional') AND definition LIKE N'%Perfil%' AND definition NOT LIKE N'%ADMIN%';
+        IF @roleConstraint IS NOT NULL BEGIN
+          DECLARE @roleSql NVARCHAR(500)=N'ALTER TABLE dbo.CursoProfissional DROP CONSTRAINT '+QUOTENAME(@roleConstraint);
+          EXEC sp_executesql @roleSql;
+        END;
+        IF NOT EXISTS(SELECT 1 FROM sys.check_constraints WHERE parent_object_id=OBJECT_ID(N'dbo.CursoProfissional') AND definition LIKE N'%ADMIN%')
+          ALTER TABLE dbo.CursoProfissional ADD CONSTRAINT CK_CursoProfissional_Perfil CHECK (Perfil IN(N'ADMIN',N'SUPERVISOR',N'COORDENADORA',N'TEORICA',N'PRATICA'));
+        IF COL_LENGTH(N'dbo.CursoAcesso',N'SessionVersion') IS NULL ALTER TABLE dbo.CursoAcesso ADD SessionVersion INT NOT NULL DEFAULT 1;
+        IF COL_LENGTH(N'dbo.CursoProfissional',N'SessionVersion') IS NULL ALTER TABLE dbo.CursoProfissional ADD SessionVersion INT NOT NULL DEFAULT 1;
+        IF COL_LENGTH(N'dbo.CursoProfissional',N'CodCli') IS NULL ALTER TABLE dbo.CursoProfissional ADD CodCli INT NULL;
+        IF COL_LENGTH(N'dbo.CursoProfissional',N'HashSenha') IS NULL ALTER TABLE dbo.CursoProfissional ADD HashSenha VARBINARY(64) NULL,Salt VARBINARY(32) NULL;
+        IF COL_LENGTH(N'dbo.CursoProfissional',N'Tentativas') IS NULL ALTER TABLE dbo.CursoProfissional ADD Tentativas INT NOT NULL DEFAULT 0,BloqueadoAte DATETIME2 NULL;
+        IF COL_LENGTH(N'dbo.CursoCatalogo',N'AvaliacaoConfig') IS NULL ALTER TABLE dbo.CursoCatalogo ADD AvaliacaoConfig NVARCHAR(MAX) NULL;
+        IF COL_LENGTH(N'dbo.CursoCatalogo',N'PoliticaVersao') IS NULL ALTER TABLE dbo.CursoCatalogo ADD PoliticaVersao INT NOT NULL DEFAULT 1;
+        IF COL_LENGTH(N'dbo.CursoVinculo',N'PoliticaSnapshot') IS NULL ALTER TABLE dbo.CursoVinculo ADD PoliticaSnapshot NVARCHAR(MAX) NULL;
+        IF COL_LENGTH(N'dbo.CursoVinculo',N'Aptidao') IS NULL ALTER TABLE dbo.CursoVinculo ADD Aptidao NVARCHAR(30) NULL,AptidaoParecer NVARCHAR(2000) NULL,AptidaoPor INT NULL,AptidaoEm DATETIME2 NULL;
+        IF COL_LENGTH(N'dbo.CursoNota',N'Criterios') IS NULL ALTER TABLE dbo.CursoNota ADD Criterios NVARCHAR(MAX) NULL;
+        IF COL_LENGTH(N'dbo.CursoCertificado',N'DadosDocumento') IS NULL ALTER TABLE dbo.CursoCertificado ADD DadosDocumento NVARCHAR(MAX) NULL;
+        IF OBJECT_ID(N'dbo.CursoEtapa',N'U') IS NULL CREATE TABLE dbo.CursoEtapa(
+          VinculoId INT NOT NULL,Etapa NVARCHAR(20) NOT NULL,Status NVARCHAR(30) NOT NULL,
+          Parecer NVARCHAR(2000) NULL,AtualizadoPor INT NOT NULL,AtualizadoEm DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+          PRIMARY KEY(VinculoId,Etapa),FOREIGN KEY(VinculoId) REFERENCES dbo.CursoVinculo(VinculoId),
+          CHECK(Etapa IN(N'TEORICA',N'PRATICA',N'FINAL')),CHECK(Status IN(N'EM_ANDAMENTO',N'APROVADA',N'RECUPERACAO',N'REPROVADA'))
+        );
+        IF OBJECT_ID(N'dbo.CursoConfiguracao',N'U') IS NULL CREATE TABLE dbo.CursoConfiguracao(
+          Id INT NOT NULL PRIMARY KEY CHECK(Id=1),Instituicao NVARCHAR(160) NOT NULL,
+          Assinante NVARCHAR(160) NULL,CargoAssinante NVARCHAR(100) NULL,AtualizadoEm DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+        );
+        IF NOT EXISTS(SELECT 1 FROM dbo.CursoConfiguracao WHERE Id=1) INSERT dbo.CursoConfiguracao(Id,Instituicao) VALUES(1,N'Cuida Amor');
+        IF NOT EXISTS(SELECT 1 FROM sys.indexes WHERE name=N'UX_CursoCertificado_Ativo' AND object_id=OBJECT_ID(N'dbo.CursoCertificado'))
+          AND NOT EXISTS(SELECT VinculoId FROM dbo.CursoCertificado WHERE CanceladoEm IS NULL GROUP BY VinculoId HAVING COUNT(*)>1)
+          CREATE UNIQUE INDEX UX_CursoCertificado_Ativo ON dbo.CursoCertificado(VinculoId) WHERE CanceladoEm IS NULL;
       `)
     })().catch((error) => {
       setupPromise = null

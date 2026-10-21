@@ -1,6 +1,41 @@
 import { NextResponse } from 'next/server'
-import { randomBytes } from 'crypto'
+import { randomBytes } from 'node:crypto'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
-import { ensureCursoTables } from '@/lib/ensureCursoTables'
-export async function POST(req:Request){const a=await requireCourseAdmin();if(a.response)return a.response;try{await ensureCursoTables();const b=await req.json(),vinculoId=Number(b.vinculoId);const [v]=await prisma.$queryRaw<any[]>`SELECT v.VinculoId,v.Situacao,v.ResultadoFinal,c.Nome,t.FrequenciaMinima,t.NotaMinima FROM dbo.CursoVinculo v JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId WHERE v.VinculoId=${vinculoId}`;if(!v||v.ResultadoFinal!=='APROVADO'||v.Situacao!=='CONCLUIDO')return NextResponse.json({sucesso:false,mensagem:'Certificado só pode ser emitido para matrícula concluída e aprovada.'},{status:409});const [freq]=await prisma.$queryRaw<any[]>`SELECT CAST(100.0*SUM(CASE WHEN f.Situacao IN(N'PRESENTE',N'REPOSICAO') THEN 1 ELSE 0 END)/NULLIF(COUNT(a.AulaId),0) AS DECIMAL(5,2)) AS Percentual FROM dbo.CursoAula a LEFT JOIN dbo.CursoFrequencia f ON f.AulaId=a.AulaId AND f.VinculoId=${vinculoId} WHERE a.TurmaId=(SELECT TurmaId FROM dbo.CursoVinculo WHERE VinculoId=${vinculoId})`;if(v.FrequenciaMinima!=null&&(freq.Percentual==null||Number(freq.Percentual)<Number(v.FrequenciaMinima)))return NextResponse.json({sucesso:false,mensagem:'Frequência abaixo do mínimo da turma.'},{status:409});if(v.NotaMinima!=null){const [nota]=await prisma.$queryRaw<any[]>`SELECT SUM((CASE WHEN NotaMaxima>0 THEN Nota/NotaMaxima*10.0 ELSE Nota END)*COALESCE(Peso,1))/NULLIF(SUM(COALESCE(Peso,1)),0) AS Media FROM dbo.CursoNota WHERE VinculoId=${vinculoId} AND Situacao=N'LANÇADA' AND Nota IS NOT NULL`;if(nota.Media==null||Number(nota.Media)<Number(v.NotaMinima))return NextResponse.json({sucesso:false,mensagem:'Média abaixo do mínimo para emissão.'},{status:409})}const codigo=randomBytes(24).toString('hex').toUpperCase();const [r]=await prisma.$queryRaw<any[]>`INSERT dbo.CursoCertificado(VinculoId,CodigoValidacao,EmitidoPor) OUTPUT INSERTED.CertificadoId,INSERTED.CodigoValidacao,INSERTED.EmitidoEm VALUES(${vinculoId},${codigo},${a.actor.id})`;await auditCourse(a.actor.id,a.actor.role,'EMITIR','CERTIFICADO',r.CertificadoId,{vinculoId});return NextResponse.json({sucesso:true,data:r},{status:201})}catch{return NextResponse.json({sucesso:false,mensagem:'Não foi possível emitir o certificado.'},{status:500})}}
+import { requireCourseAdmin } from '@/lib/courseApi'
+import { academicContext,graduationErrors,auditTransaction } from '@/lib/academicService'
+
+export async function POST(request:Request){
+  const auth=await requireCourseAdmin();if(auth.response)return auth.response
+  try{
+    const b=await request.json(),id=Number(b.vinculoId)
+    if(!Number.isSafeInteger(id)||id<1)throw Error('Matrícula inválida.')
+    const result=await prisma.$transaction(async tx=>{
+      const c=await academicContext(tx,id,true)
+      if(c.row.Situacao!=='CONCLUIDO'||c.row.ResultadoFinal!=='APROVADO')throw Error('Conclua e aprove a matrícula antes de emitir o certificado.')
+      const errors=await graduationErrors(tx,id,c);if(errors.length)throw Error(errors.join(' '))
+      const [existing]=await tx.$queryRaw<any[]>`SELECT CertificadoId,CodigoValidacao,EmitidoEm FROM dbo.CursoCertificado WHERE VinculoId=${id} AND CanceladoEm IS NULL`
+      if(existing)return {...existing,reimpressao:true}
+      const [doc]=await tx.$queryRaw<any[]>`SELECT COALESCE(NULLIF(p.Razao,N''),p.Cliente) AS Aluno,c.Nome AS Curso,COALESCE(t.CargaHoraria,c.CargaHoraria) AS CargaHoraria,cfg.Instituicao,cfg.Assinante,cfg.CargoAssinante FROM dbo.CursoVinculo v JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId CROSS JOIN dbo.CursoConfiguracao cfg WHERE v.VinculoId=${id} AND cfg.Id=1`
+      const code=randomBytes(24).toString('hex').toUpperCase()
+      const [created]=await tx.$queryRaw<any[]>`INSERT dbo.CursoCertificado(VinculoId,CodigoValidacao,EmitidoPor,DadosDocumento) OUTPUT INSERTED.CertificadoId,INSERTED.CodigoValidacao,INSERTED.EmitidoEm VALUES(${id},${code},${auth.actor.id},${JSON.stringify(doc)})`
+      await auditTransaction(tx,auth.actor,'EMITIR','CERTIFICADO',created.CertificadoId,{vinculoId:id})
+      return created
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable})
+    return NextResponse.json({sucesso:true,data:result},{status:result.reimpressao?200:201})
+  }catch(error){return NextResponse.json({sucesso:false,mensagem:error instanceof Error?error.message:'Falha na emissão.'},{status:409})}
+}
+export async function PATCH(request:Request){
+  const auth=await requireCourseAdmin();if(auth.response)return auth.response
+  try{
+    const b=await request.json(),id=Number(b.certificadoId),reason=String(b.motivo||'').trim()
+    if(!Number.isSafeInteger(id)||id<1||reason.length<5||reason.length>500)throw Error('Informe o certificado e o motivo do cancelamento (5 a 500 caracteres).')
+    await prisma.$transaction(async tx=>{
+      const [old]=await tx.$queryRaw<any[]>`SELECT CertificadoId,VinculoId,CanceladoEm FROM dbo.CursoCertificado WHERE CertificadoId=${id}`
+      if(!old||old.CanceladoEm)throw Error('Certificado não encontrado ou já cancelado.')
+      await tx.$executeRaw`UPDATE dbo.CursoCertificado SET CanceladoEm=SYSUTCDATETIME(),MotivoCancelamento=${reason} WHERE CertificadoId=${id}`
+      await auditTransaction(tx,auth.actor,'CANCELAR','CERTIFICADO',id,{vinculoId:old.VinculoId,motivo:reason})
+    })
+    return NextResponse.json({sucesso:true})
+  }catch(error){return NextResponse.json({sucesso:false,mensagem:error instanceof Error?error.message:'Falha ao cancelar.'},{status:409})}
+}

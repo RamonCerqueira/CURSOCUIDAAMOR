@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
+import { Prisma } from '@prisma/client'
+import { readPolicy } from '@/lib/academicPolicy'
+import { auditTransaction } from '@/lib/academicService'
 import { randomBytes } from 'crypto'
 
 export async function GET(request: Request) {
@@ -9,17 +12,18 @@ export async function GET(request: Request) {
   if (auth.response) return auth.response
   try {
     await ensureCursoTables()
-    const search = new URL(request.url).searchParams.get('busca') || ''
-    const rows = await prisma.$queryRaw<any[]>`
-      SELECT TOP 200 v.VinculoId,v.CodCli,v.CursoId,v.VersaoId,v.TurmaId,v.MatriculaCodigo,v.Situacao,v.ResultadoFinal,v.VinculadoEm,v.ConcluidoEm,
-        c.Nome AS Curso,p.Cliente,p.Razao,p.EMail,p.EMail2,t.Nome AS Turma
-      FROM dbo.CursoVinculo v INNER JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId
-      LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId
-      LEFT JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli
-      WHERE (${search} = N'' OR p.Cliente LIKE ${`%${search}%`} OR p.Razao LIKE ${`%${search}%`} OR p.EMail2 LIKE ${`%${search}%`} OR c.Nome LIKE ${`%${search}%`})
-      ORDER BY v.CriadoEm DESC
-    `
-    return NextResponse.json({ sucesso: true, data: rows })
+    const url=new URL(request.url),search=url.searchParams.get('busca')||'',status=url.searchParams.get('situacao')||'TODOS'
+    const paged=url.searchParams.has('page'),page=Math.max(1,Math.floor(Number(url.searchParams.get('page'))||1)),limit=Math.min(100,Math.max(1,Math.floor(Number(url.searchParams.get('limit'))||10)))
+    const base=Prisma.sql`(${search}=N'' OR p.Cliente LIKE ${'%'+search+'%'} OR p.Razao LIKE ${'%'+search+'%'} OR p.EMail2 LIKE ${'%'+search+'%'} OR c.Nome LIKE ${'%'+search+'%'})`
+    const filter=Prisma.sql`${base} AND (${status}=N'TODOS' OR v.Situacao=${status})`
+    const [rows,counts]=await Promise.all([
+      prisma.$queryRaw<any[]>(Prisma.sql`SELECT v.VinculoId,v.CodCli,v.CursoId,v.VersaoId,v.TurmaId,v.MatriculaCodigo,v.Situacao,v.ResultadoFinal,v.VinculadoEm,v.ConcluidoEm,v.Aptidao,
+        c.Nome AS Curso,p.Cliente,p.Razao,p.EMail,p.EMail2,t.Nome AS Turma FROM dbo.CursoVinculo v JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId LEFT JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli
+        WHERE ${filter} ORDER BY v.CriadoEm DESC,v.VinculoId DESC ${paged?Prisma.sql`OFFSET ${(page-1)*limit} ROWS FETCH NEXT ${limit} ROWS ONLY`:Prisma.empty}`),
+      prisma.$queryRaw<any[]>(Prisma.sql`SELECT v.Situacao,COUNT(*) AS Total FROM dbo.CursoVinculo v JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId LEFT JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli WHERE ${base} GROUP BY v.Situacao`),
+    ])
+    const byStatus=Object.fromEntries(counts.map(c=>[c.Situacao,Number(c.Total)])),total=status==='TODOS'?counts.reduce((sum,c)=>sum+Number(c.Total),0):byStatus[status]||0
+    return NextResponse.json({sucesso:true,data:rows,meta:{page,limit,total,counts:byStatus}})
   } catch (error) {
     console.error('Falha ao listar vínculos:', error)
     return NextResponse.json({ sucesso: false, mensagem: 'Não foi possível carregar os vínculos.' }, { status: 500 })
@@ -35,28 +39,34 @@ export async function POST(request: Request) {
     const codCli = Number(body.codCli)
     const cursoId = Number(body.cursoId)
     if (!Number.isSafeInteger(codCli) || codCli < 1 || !Number.isSafeInteger(cursoId) || cursoId < 1) return NextResponse.json({ sucesso: false, mensagem: 'Selecione uma pessoa e um curso válidos.' }, { status: 400 })
-    const [person] = await prisma.$queryRaw<any[]>`SELECT TOP 1 CodCli FROM dbo.CLIENTEs WHERE CodCli=${codCli}`
-    const [version] = await prisma.$queryRaw<any[]>`SELECT TOP 1 v.VersaoId FROM dbo.CursoVersao v INNER JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId WHERE v.CursoId=${cursoId} AND c.Status=N'ATIVO' ORDER BY v.NumeroVersao DESC`
-    if (!person || !version) return NextResponse.json({ sucesso: false, mensagem: 'Pessoa ou curso não encontrado.' }, { status: 404 })
-    let turmaId: number | null = null
-    let versaoId = version.VersaoId
-    if (body.turmaId) {
-      turmaId = Number(body.turmaId)
-      const [turma] = await prisma.$queryRaw<any[]>`SELECT TOP 1 TurmaId,VersaoId,Status,Vagas,InscricaoInicio,InscricaoFim FROM dbo.CursoTurma WHERE TurmaId=${turmaId} AND CursoId=${cursoId}`
-      if (!turma || !['INSCRICOES_ABERTAS','EM_ANDAMENTO','PLANEJADA'].includes(turma.Status)) return NextResponse.json({ sucesso: false, mensagem: 'Turma não encontrada ou indisponível para matrícula.' }, { status: 400 })
-      const today = new Date().toISOString().slice(0,10)
-      if (turma.Status === 'INSCRICOES_ABERTAS' && ((turma.InscricaoInicio && today < String(turma.InscricaoInicio).slice(0,10)) || (turma.InscricaoFim && today > String(turma.InscricaoFim).slice(0,10)))) return NextResponse.json({ sucesso: false, mensagem: 'Fora do período de inscrição da turma.' }, { status: 400 })
-      versaoId = turma.VersaoId
-      if (turma.Vagas) { const [count] = await prisma.$queryRaw<any[]>`SELECT COUNT(*) AS Total FROM dbo.CursoVinculo WHERE TurmaId=${turmaId} AND Situacao<>N'CANCELADO'`; if (Number(count.Total) >= Number(turma.Vagas)) return NextResponse.json({ sucesso: false, mensagem: 'A turma atingiu o limite de vagas.' }, { status: 409 }) }
-    }
-    const [existing] = await prisma.$queryRaw<any[]>`SELECT TOP 1 VinculoId FROM dbo.CursoVinculo WHERE CodCli=${codCli} AND CursoId=${cursoId} AND VersaoId=${versaoId} AND ((${turmaId} IS NULL AND TurmaId IS NULL) OR TurmaId=${turmaId}) AND Situacao <> N'CANCELADO'`
-    if (existing) return NextResponse.json({ sucesso: false, mensagem: 'Esta pessoa já tem vínculo com esta versão do curso.' }, { status: 409 })
-    const matriculaCodigo = `SC-${randomBytes(6).toString('hex').toUpperCase()}`
-    const [created] = await prisma.$queryRaw<any[]>`INSERT INTO dbo.CursoVinculo (CodCli,CursoId,VersaoId,TurmaId,Situacao,VinculadoEm,MatriculaCodigo) OUTPUT INSERTED.VinculoId,INSERTED.MatriculaCodigo VALUES (${codCli},${cursoId},${versaoId},${turmaId},N'ATIVO',${body.vinculadoEm ? new Date(body.vinculadoEm) : new Date()},${matriculaCodigo})`
-    await auditCourse(auth.actor.id, auth.actor.role, 'MATRICULAR', 'VINCULO', created.VinculoId, { codCli, cursoId, turmaId, versaoId })
-    return NextResponse.json({ sucesso: true, data: created }, { status: 201 })
+    const created=await prisma.$transaction(async tx=>{
+      const [person]=await tx.$queryRaw<any[]>`SELECT CodCli FROM dbo.CLIENTEs WHERE CodCli=${codCli}`
+      const [course]=await tx.$queryRaw<any[]>`SELECT * FROM dbo.CursoCatalogo WHERE CursoId=${cursoId} AND Status=N'ATIVO'`
+      const [version]=await tx.$queryRaw<any[]>`SELECT TOP 1 VersaoId FROM dbo.CursoVersao WHERE CursoId=${cursoId} ORDER BY NumeroVersao DESC`
+      if(!person||!course||!version)throw Error('Pessoa ou curso não encontrado.')
+      const turmaId=body.turmaId?Number(body.turmaId):null
+      let versaoId=version.VersaoId,turma:any=null
+      if(turmaId!=null){
+        if(!Number.isSafeInteger(turmaId)||turmaId<1)throw Error('Turma inválida.')
+        ;[turma]=await tx.$queryRaw<any[]>`SELECT *, (SELECT COUNT(*) FROM dbo.CursoVinculo WHERE TurmaId=${turmaId} AND Situacao<>N'CANCELADO') AS Total FROM dbo.CursoTurma WHERE TurmaId=${turmaId} AND CursoId=${cursoId}`
+        if(!turma||!['PLANEJADA','INSCRICOES_ABERTAS','EM_ANDAMENTO'].includes(turma.Status)||turma.Vagas!=null&&turma.Total>=turma.Vagas)throw Error('Turma indisponível ou sem vagas.')
+        const today=new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'})
+        const day=(value:Date)=>new Date(value).toISOString().slice(0,10)
+        if(turma.Status==='INSCRICOES_ABERTAS'&&((turma.InscricaoInicio&&today<day(turma.InscricaoInicio))||(turma.InscricaoFim&&today>day(turma.InscricaoFim))))throw Error('Fora do período de inscrição.')
+        versaoId=turma.VersaoId
+      }
+      const duplicate=await tx.$queryRaw<any[]>`SELECT VinculoId FROM dbo.CursoVinculo WHERE CodCli=${codCli} AND CursoId=${cursoId} AND VersaoId=${versaoId} AND (TurmaId=${turmaId} OR (TurmaId IS NULL AND ${turmaId} IS NULL)) AND Situacao<>N'CANCELADO'`
+      if(duplicate.length)throw Error('Já existe matrícula nesta turma e versão.')
+      const policy=readPolicy({...course,...(turma||{})}),code='CA-'+randomBytes(6).toString('hex').toUpperCase()
+      const date=body.vinculadoEm?new Date(body.vinculadoEm):new Date()
+      if(Number.isNaN(date.getTime()))throw Error('Data de vínculo inválida.')
+      const [row]=await tx.$queryRaw<any[]>`INSERT dbo.CursoVinculo(CodCli,CursoId,VersaoId,TurmaId,Situacao,VinculadoEm,MatriculaCodigo,PoliticaSnapshot) OUTPUT INSERTED.VinculoId,INSERTED.MatriculaCodigo VALUES(${codCli},${cursoId},${versaoId},${turmaId},N'ATIVO',${date},${code},${JSON.stringify(policy)})`
+      await auditTransaction(tx,auth.actor,'MATRICULAR','VINCULO',row.VinculoId,{codCli,cursoId,turmaId,versaoId,policy})
+      return row
+    },{isolationLevel:Prisma.TransactionIsolationLevel.Serializable})
+    return NextResponse.json({sucesso:true,data:created},{status:201})
   } catch (error) {
     console.error('Falha ao criar vínculo:', error)
-    return NextResponse.json({ sucesso: false, mensagem: 'Não foi possível vincular a pessoa ao curso.' }, { status: 500 })
+    return NextResponse.json({ sucesso: false, mensagem: error instanceof Error?error.message:'Não foi possível vincular a pessoa ao curso.' }, { status: 500 })
   }
 }

@@ -1,3 +1,5 @@
+import { classForm } from '@/lib/courseForms'
+import { auditTransaction } from '@/lib/academicService'
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
@@ -22,9 +24,13 @@ export async function POST(request: Request) {
     if (!Number.isSafeInteger(cursoId) || !nome) return NextResponse.json({ sucesso: false, mensagem: 'Informe o curso e o nome da turma.' }, { status: 400 })
     const [version] = await prisma.$queryRaw<any[]>`SELECT TOP 1 VersaoId FROM dbo.CursoVersao WHERE CursoId=${cursoId} ORDER BY NumeroVersao DESC`
     if (!version) return NextResponse.json({ sucesso: false, mensagem: 'O curso precisa ter uma versão de conteúdo.' }, { status: 400 })
-    const [row] = await prisma.$queryRaw<any[]>`INSERT INTO dbo.CursoTurma (CursoId,VersaoId,Codigo,Nome,Status,DataInicio,DataFim,Turno,Horario,Modalidade,Local,Vagas,InscricaoInicio,InscricaoFim,CargaHoraria,NotaMinima,FrequenciaMinima)
-      OUTPUT INSERTED.TurmaId VALUES (${cursoId},${version.VersaoId},${String(b.codigo||'').trim()||null},${nome},${b.status||'PLANEJADA'},${b.dataInicio||null},${b.dataFim||null},${b.turno||null},${b.horario||null},${b.modalidade||null},${b.local||null},${b.vagas?Number(b.vagas):null},${b.inscricaoInicio||null},${b.inscricaoFim||null},${b.cargaHoraria?Number(b.cargaHoraria):null},${b.notaMinima===''||b.notaMinima==null?null:Number(b.notaMinima)},${b.frequenciaMinima===''||b.frequenciaMinima==null?null:Number(b.frequenciaMinima)})`
-    await auditCourse(auth.actor.id, auth.actor.role, 'CRIAR', 'TURMA', row.TurmaId, b)
+    const v=classForm({...b,status:b.status||'PLANEJADA'})
+    const row=await prisma.$transaction(async tx=>{
+      const [created]=await tx.$queryRaw<any[]>`INSERT INTO dbo.CursoTurma(CursoId,VersaoId,Codigo,Nome,Status,DataInicio,DataFim,Turno,Horario,Modalidade,Local,Vagas,InscricaoInicio,InscricaoFim,CargaHoraria,NotaMinima,FrequenciaMinima)
+        OUTPUT INSERTED.TurmaId VALUES(${cursoId},${version.VersaoId},${v.codigo},${v.nome},${v.status},${v.dataInicio},${v.dataFim},${v.turno},${v.horario},${v.modalidade},${v.local},${v.vagas},${v.inscricaoInicio},${v.inscricaoFim},${v.cargaHoraria},${v.notaMinima},${v.frequenciaMinima})`
+      await auditTransaction(tx,auth.actor,'CRIAR','TURMA',created.TurmaId,v)
+      return created
+    })
     return NextResponse.json({ sucesso: true, data: row }, { status: 201 })
-  } catch (error) { console.error('Falha ao criar turma:', error); return NextResponse.json({ sucesso: false, mensagem: 'Não foi possível criar a turma.' }, { status: 500 }) }
+  } catch (error) { console.error('Falha ao criar turma:', error); return NextResponse.json({ sucesso: false, mensagem: error instanceof Error?error.message:'Não foi possível criar a turma.' }, { status: 500 }) }
 }

@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
-import { LayoutDashboard, Users, BookOpen, ShieldCheck, ClipboardList, CalendarDays, BarChart3, LogOut, Menu, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { LayoutDashboard, Users, BookOpen, ShieldCheck, ClipboardList, CalendarDays, BarChart3, LogOut, Menu, X, PanelLeftClose, PanelLeftOpen, GraduationCap } from 'lucide-react'
 
-export function AdminSidebar() {
+export function AdminSidebar({ portal = 'admin' }: {portal?:'admin'|'docente'}) {
   const pathname = usePathname()
   const [userName, setUserName] = useState('SoftCare')
+  const [role, setRole] = useState(portal === 'docente' ? 'TEORICA' : '')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const asideRef = useRef<HTMLElement>(null)
@@ -16,6 +17,7 @@ export function AdminSidebar() {
     try { setCollapsed(localStorage.getItem('cuida-sidebar-collapsed') === 'true') } catch { }
     fetch('/api/auth/session').then((res) => (res.ok ? res.json() : null)).then((data) => {
       if (data?.usuario?.nome) setUserName(data.usuario.nome)
+      if (data?.usuario?.role) setRole(data.usuario.role)
     }).catch(() => { })
   }, [])
   const toggleCollapsed = () => { const next = !collapsed; setCollapsed(next); try { localStorage.setItem('cuida-sidebar-collapsed', String(next)) } catch { } }
@@ -41,14 +43,23 @@ export function AdminSidebar() {
     try { await fetch('/api/auth/logout', { method: 'POST' }) }
     finally { window.location.href = '/login' }
   }
-  const navItems = [
+  const navItems = portal === 'docente' ? [
+    { name:'Minhas turmas e avaliações',path:'/docente',icon:ClipboardList },
+  ] : [
+    { name: 'Coordenação', path: '/admin/coordenacao', icon: GraduationCap },
     { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Alunos', path: '/admin/alunos', icon: Users },
     { name: 'Gestão de Cursos', path: '/admin/cursos', icon: BookOpen },
     { name: 'Turmas e frequência', path: '/admin/turmas', icon: CalendarDays },
     { name: 'Relatórios', path: '/admin/relatorios', icon: BarChart3 },
     { name: 'Vínculos e Notas', path: '/admin/vinculos', icon: ClipboardList },
+    ...(['ADMIN','SUPERVISOR'].includes(role) ? [
+      {name:'Visões profissionais',path:'/admin/visoes',icon:LayoutDashboard},
+      {name:'Equipe e acessos',path:'/admin/equipe',icon:ShieldCheck},
+      {name:'Configurações',path:'/admin/configuracoes',icon:ShieldCheck},
+    ] : []),
   ]
+  const roleLabel = ({ADMIN:'Administrador',SUPERVISOR:'Administrador',COORDENADORA:'Coordenadora',TEORICA:'Professora teórica',PRATICA:'Professora prática'} as Record<string,string>)[role] || 'Equipe de cursos'
   const initials = userName.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('') || 'SC'
 
   return <>
@@ -80,7 +91,7 @@ export function AdminSidebar() {
         <div className="admin-user-card">
           <div className="flex items-center gap-3 min-w-0">
             <div className="admin-avatar">{initials}</div>
-            <div className="min-w-0 admin-user-copy"><h4 className="font-semibold text-sm truncate" title={userName}>{userName}</h4><p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><ShieldCheck size={12} /> Administrador</p></div>
+            <div className="min-w-0 admin-user-copy"><h4 className="font-semibold text-sm truncate" title={userName}>{userName}</h4><p className="text-xs text-slate-400 flex items-center gap-1 mt-1"><ShieldCheck size={12} /> {roleLabel}</p></div>
             <button onClick={handleLogout} title="Sair do sistema" aria-label="Sair do sistema" className="admin-logout"><LogOut size={16} /></button>
           </div>
           <div className="admin-sidebar-footer"><span><i /> Sistema de cursos</span><span>v1.0.0</span></div>

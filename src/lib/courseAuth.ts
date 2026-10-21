@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers'
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { prisma } from './prisma'
+import { ensureCursoTables } from './ensureCursoTables'
 
 export type CourseActor = {
   id: number
@@ -8,6 +10,7 @@ export type CourseActor = {
   nome?: string
   perfil?: string
   precisaTrocarSenha?: boolean
+  sessionVersion?: number
 }
 
 export function decodeCourseToken(token: string) {
@@ -33,35 +36,40 @@ export function decodeCourseToken(token: string) {
 }
 
 export async function getCourseActor(): Promise<CourseActor | null> {
-  const cookieJar = cookies()
-  const payloads = [cookieJar.get('token')?.value, cookieJar.get('curso_token')?.value].filter(Boolean).map((token) => decodeCourseToken(token!)).filter(Boolean)
-  const payload = payloads.find((candidate: any) => ['ADMIN', 'SUPERVISOR'].includes(String(candidate.role || '').toUpperCase())) || payloads[0]
-  const id = Number(payload?.id)
-  const role = String(payload?.role || '').toUpperCase()
-  if (!Number.isSafeInteger(id) || id <= 0 || !['ADMIN', 'SUPERVISOR', 'ALUNO', 'USER'].includes(role)) return null
-  return { id, email: String(payload?.email || ''), role, nome: String(payload?.nome || ''), perfil: String(payload?.perfil || ''), precisaTrocarSenha: payload?.precisaTrocarSenha === true }
+  const jar=cookies()
+  const payloads=[jar.get('curso_token')?.value,jar.get('token')?.value].filter(Boolean).map(token=>decodeCourseToken(token!)).filter(Boolean)
+  for(const payload of payloads){
+    const id=Number(payload.id),tokenRole=String(payload.role||'').toUpperCase()
+    if(!Number.isSafeInteger(id)||id<1)continue
+    await ensureCursoTables()
+    if(tokenRole==='ALUNO'){
+      const [account]=await prisma.$queryRaw<any[]>`SELECT SessionVersion,PrecisaTrocarSenha FROM dbo.CursoAcesso WHERE CodCli=${id}`
+      if(!account||payload.aud!=='cuida-cursos'||Number(payload.sessionVersion)!==Number(account.SessionVersion))continue
+      return {id,email:payload.email||'',nome:payload.nome||'',role:'ALUNO',perfil:'ALUNO',sessionVersion:Number(account.SessionVersion),precisaTrocarSenha:Boolean(account.PrecisaTrocarSenha)}
+    }
+    const [profile]=await prisma.$queryRaw<any[]>`SELECT p.Perfil,p.Ativo,p.SessionVersion,s.Inativo,s.Usuario FROM dbo.CursoProfissional p JOIN dbo.Senha s ON s.CodUsu=p.CodUsu WHERE p.CodUsu=${id}`
+    if(!profile||!profile.Ativo||['S','X','1'].includes(String(profile.Inativo||'').trim().toUpperCase()))continue
+    if(payload.aud==='cuida-cursos'&&Number(payload.sessionVersion)!==Number(profile.SessionVersion))continue
+    if(payload.aud!=='cuida-cursos'&&!['ADMIN','SUPERVISOR'].includes(tokenRole))continue
+    return {id,email:payload.email||'',nome:payload.nome||profile.Usuario,role:profile.Perfil,perfil:profile.Perfil,sessionVersion:Number(profile.SessionVersion)}
+  }
+  return null
 }
 
 export async function getStudentActor(): Promise<CourseActor | null> {
-  const studentToken = cookies().get('curso_token')?.value
-  const studentPayload = studentToken ? decodeCourseToken(studentToken) : null
-  if (studentPayload && String(studentPayload.role || '').toUpperCase() === 'ALUNO') {
-    const id = Number(studentPayload.id)
-    if (Number.isSafeInteger(id) && id > 0) return { id, email: String(studentPayload.email || ''), role: 'ALUNO', nome: String(studentPayload.nome || ''), precisaTrocarSenha: studentPayload.precisaTrocarSenha === true }
-  }
-  const actor = await getCourseActor()
-  return actor && ['USER', 'SUPERVISOR', 'ADMIN'].includes(actor.role) ? actor : null
+  const actor=await getCourseActor()
+  return actor?.role==='ALUNO'?actor:null
 }
 
-export function isCourseAdmin(actor: CourseActor | null): actor is CourseActor {
-  return !!actor && (actor.role === 'ADMIN' || actor.role === 'SUPERVISOR')
+export function isCourseAdmin(actor: CourseActor | null): actor is CourseActor & {role:'ADMIN'|'SUPERVISOR'|'COORDENADORA'} {
+  return !!actor && ['ADMIN', 'SUPERVISOR', 'COORDENADORA'].includes(actor.role)
 }
 
 export function signStudentToken(payload: Record<string, unknown>) {
   const secret = process.env.CURSO_JWT_SECRET || process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' ? 'dev-secret' : '')
   if (!secret) throw new Error('CURSO_JWT_SECRET ausente')
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
-  const body = Buffer.from(JSON.stringify({ ...payload, iat: Math.floor(Date.now()/1000), exp: Math.floor(Date.now()/1000)+8*60*60 })).toString('base64url')
+  const body = Buffer.from(JSON.stringify({ ...payload, aud:'cuida-cursos', iat: Math.floor(Date.now()/1000), exp: Math.floor(Date.now()/1000)+8*60*60 })).toString('base64url')
   const input = `${header}.${body}`
   return `${input}.${createHmac('sha256', secret).update(input).digest('base64url')}`
 }

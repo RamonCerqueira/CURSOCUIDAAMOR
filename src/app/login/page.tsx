@@ -22,7 +22,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           login: identificador.trim(),
           email: identificador.trim(),
-          senha: senha.trim()
+          senha
         }),
       })
 
@@ -34,7 +34,9 @@ export default function LoginPage() {
       const params = new URLSearchParams(window.location.search)
       const returnTo = params.get('returnTo')
 
-      if (returnTo) {
+      if (['TEORICA','PRATICA','COORDENADORA'].includes(json.role)) {
+        window.location.href = json.redirectTo
+      } else if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
         window.location.href = returnTo
       } else if (json.redirectTo) {
         window.location.href = json.redirectTo
@@ -54,8 +56,8 @@ export default function LoginPage() {
     <main className="cl-root">
       <aside className="cl-hero" aria-hidden="true">
         <div className="cl-brand">
-          <div className="cl-brand-icon"><GraduationCap size={24} /></div>
-          <div><b>CURSO CUIDA</b><span>Cuida Amor</span></div>
+          <img src="/logo01.svg" alt="Cuida Amor" className="cl-brand-logo"/>
+          <div><b>CUIDA AMOR</b><span>PLATAFORMA DE CURSOS</span></div>
         </div>
 
         <div className="cl-hero-copy">
@@ -74,8 +76,8 @@ export default function LoginPage() {
       <section className="cl-panel">
         <form onSubmit={submit} className="cl-card" noValidate={false}>
           <div className="cl-mobile-brand">
-            <div className="cl-brand-icon"><GraduationCap size={20} /></div>
-            <b>CURSO CUIDA</b>
+            <img src="/logo01.svg" alt="" className="cl-brand-logo"/>
+            <b>CUIDA AMOR</b>
           </div>
 
           <span className="cl-eyebrow"><Heart size={12} /> Cuida Amor</span>

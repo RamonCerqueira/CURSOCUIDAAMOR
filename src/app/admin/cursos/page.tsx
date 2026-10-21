@@ -3,18 +3,22 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminPageHeader, Drawer, Field, FilterTabs, SearchField, StatusBadge, EmptyState, Notice, Pagination, useTablePage } from '@/components/AdminUI'
+import { StageRule,stages } from '@/lib/academicPolicy'
+import { CourseEvaluationSettings } from '@/components/CourseEvaluationSettings'
 import { BookOpen, Plus, RefreshCw, Layers, FileText, Save, ArrowUpRight, Users } from 'lucide-react'
 
-type Course = { CursoId: number; Codigo: string | null; Nome: string; Descricao: string | null; CargaHoraria: number | null; PublicoAlvo: string | null; Status: string; VersaoId: number; NumeroVersao: number; TituloVersao: string; Modulos: number; Topicos: number; PessoasVinculadas: number }
+type Course = { AvaliacaoConfig:string|null; CursoId: number; Codigo: string | null; Nome: string; Descricao: string | null; CargaHoraria: number | null; PublicoAlvo: string | null; PercentualMinimoAprovacao: number | null; Status: string; VersaoId: number; NumeroVersao: number; TituloVersao: string; Modulos: number; Topicos: number; PessoasVinculadas: number }
 type ContentRow = { VersaoId: number; NumeroVersao: number; TituloVersao: string; VigenteDesde: string | null; ModuloId: number | null; TituloModulo: string | null; DescricaoModulo: string | null; OrdemModulo: number; TopicoId: number | null; TituloTopico: string | null; DescricaoTopico: string | null; CargaHorariaTopico: number | null; MaterialUrl: string | null; OrdemTopico: number }
 
-const blank = { codigo: '', nome: '', descricao: '', cargaHoraria: '', publicoAlvo: '', status: 'ATIVO' }
+const blank = { codigo: '', nome: '', descricao: '', cargaHoraria: '', publicoAlvo: '', percentualMinimoAprovacao: '0', status: 'ATIVO' }
 const field = 'w-full'
 
 export default function AdminCursosPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [content, setContent] = useState<ContentRow[]>([])
+  const [rules,setRules]=useState<StageRule[]>(stages.map(etapa=>({etapa,metodo:'LIVRE',criterios:[]})))
+  const [canConfigure,setCanConfigure]=useState(false)
   const [form, setForm] = useState(blank)
   const [creating, setCreating] = useState(false)
   const [moduleTitle, setModuleTitle] = useState('')
@@ -47,7 +51,7 @@ export default function AdminCursosPage() {
       const response = await fetch('/api/admin/cursos')
       const json = await response.json()
       if (!response.ok) throw new Error(json.mensagem || 'Erro ao carregar cursos.')
-      setCourses(json.data || [])
+      setCourses(json.data || []);setCanConfigure(Boolean(json.canConfigure))
       setSelectedId(current => current && json.data.some((c: Course) => c.CursoId === current) ? current : json.data[0]?.CursoId || null)
     } catch (error: any) { setMessage(error.message) }
     finally { setLoading(false) }
@@ -63,11 +67,11 @@ export default function AdminCursosPage() {
   }, [])
 
   useEffect(() => { loadCourses() }, [loadCourses])
-  useEffect(() => { if (selectedId) { loadContent(selectedId); const course = courses.find(c => c.CursoId === selectedId); if (course) setForm({ codigo: course.Codigo || '', nome: course.Nome, descricao: course.Descricao || '', cargaHoraria: String(course.CargaHoraria || ''), publicoAlvo: course.PublicoAlvo || '', status: course.Status }) } }, [selectedId, courses, loadContent])
+  useEffect(() => { if (selectedId) { loadContent(selectedId); const course = courses.find(c => c.CursoId === selectedId); if(course){try{setRules(course.AvaliacaoConfig?JSON.parse(course.AvaliacaoConfig):stages.map(etapa=>({etapa,metodo:'LIVRE',criterios:[]})))}catch{setRules([])}}; if (course) setForm({ codigo: course.Codigo || '', nome: course.Nome, descricao: course.Descricao || '', cargaHoraria: String(course.CargaHoraria || ''), publicoAlvo: course.PublicoAlvo || '', percentualMinimoAprovacao: course.PercentualMinimoAprovacao == null ? '' : String(course.PercentualMinimoAprovacao), status: course.Status }) } }, [selectedId, courses, loadContent])
 
   const submitCourse = async (event: FormEvent) => {
     event.preventDefault()
-    const response = await fetch(creating ? '/api/admin/cursos' : `/api/admin/cursos/${selectedId}`, { method: creating ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+    const response = await fetch(creating ? '/api/admin/cursos' : `/api/admin/cursos/${selectedId}`, { method: creating ? 'POST' : 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({...form,avaliacaoConfig:rules.map(r=>({...r,criterios:r.criterios.map(c=>c.trim()).filter(Boolean)}))}) })
     const json = await response.json()
     if (!response.ok) { setMessage(json.mensagem || 'Não foi possível salvar o curso.'); return }
     setMessage(creating ? 'Curso criado.' : 'Curso atualizado.')
@@ -115,7 +119,7 @@ export default function AdminCursosPage() {
     <AdminPageHeader title="Gestão de Cursos" description="Crie, edite e gerencie seus cursos.">
       <SearchField value={query} onChange={setQuery} placeholder="Buscar cursos..."/>
       <button className="cuida-button" onClick={loadCourses} aria-label="Atualizar cursos"><RefreshCw size={14}/></button>
-      <button className="cuida-button primary" onClick={()=>{setCreating(true);setSelectedId(null);setForm(blank);setEditorOpen(true)}}><Plus size={14}/> Novo curso</button>
+      <button className="cuida-button primary" onClick={()=>{setCreating(true);setSelectedId(null);setForm(blank);setRules(stages.map(etapa=>({etapa,metodo:'LIVRE',criterios:[]})));setEditorOpen(true)}}><Plus size={14}/> Novo curso</button>
     </AdminPageHeader>
     {message&&!editorOpen&&<Notice>{message}</Notice>}
     <section className="cuida-panel">
@@ -138,7 +142,7 @@ export default function AdminCursosPage() {
       {message&&<Notice>{message}</Notice>}
       {editingContent&&<section className="cuida-panel p-5 mb-4"><h3 className="font-semibold mb-4">Editar {editingContent.tipo==='modulo'?'módulo':'tópico'}</h3><form onSubmit={saveContent} className="cuida-form-grid"><Field label="Título" required><input required value={contentDraft.titulo} onChange={e=>setContentDraft({...contentDraft,titulo:e.target.value})}/></Field><Field label="Descrição"><input value={contentDraft.descricao} onChange={e=>setContentDraft({...contentDraft,descricao:e.target.value})}/></Field><button type="button" className="cuida-button" onClick={()=>setEditingContent(null)}>Cancelar</button><button className="cuida-button primary"><Save size={14}/>Salvar conteúdo</button></form></section>}
       <div className="space-y-4 cuida-editor">
-        {(creating || selected) && <section className="glass-panel p-5"><h2 className="font-bold text-lg mb-4">{creating ? 'Cadastrar curso' : 'Dados do curso'}</h2><form onSubmit={submitCourse} className="grid md:grid-cols-2 gap-3"><Field label="Código (opcional)"><input className={field} placeholder="Código (opcional)" value={form.codigo} onChange={e=>setForm({...form,codigo:e.target.value})}/></Field><Field label="Nome do curso *" required><input className={field} placeholder="Nome do curso *" required value={form.nome} onChange={e=>setForm({...form,nome:e.target.value})}/></Field><Field label="Descrição" wide><textarea className={`${field} md:col-span-2`} placeholder="Descrição" value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})}/></Field><Field label="Carga horária"><input className={field} type="number" step="0.5" min="0" placeholder="Carga horária" value={form.cargaHoraria} onChange={e=>setForm({...form,cargaHoraria:e.target.value})}/></Field><Field label="Público-alvo ou funções"><input className={field} placeholder="Público-alvo ou funções" value={form.publicoAlvo} onChange={e=>setForm({...form,publicoAlvo:e.target.value})}/></Field><Field label="Situação"><select className={field} value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="ATIVO">Ativo</option><option value="RASCUNHO">Rascunho</option><option value="ARQUIVADO">Arquivado</option></select></Field><button className="gradient-btn rounded-xl px-4 py-2.5 flex items-center justify-center gap-2"><Save size={16}/>{creating?'Criar curso':'Salvar alterações'}</button></form></section>}
+        {(creating || selected) && <section className="glass-panel p-5"><h2 className="font-bold text-lg mb-4">{creating ? 'Cadastrar curso' : 'Dados do curso'}</h2><form onSubmit={submitCourse} className="grid md:grid-cols-2 gap-3"><Field label="Código (opcional)"><input className={field} placeholder="Código (opcional)" value={form.codigo} onChange={e=>setForm({...form,codigo:e.target.value})}/></Field><Field label="Nome do curso *" required><input className={field} placeholder="Nome do curso *" required value={form.nome} onChange={e=>setForm({...form,nome:e.target.value})}/></Field><Field label="Descrição" wide><textarea className={`${field} md:col-span-2`} placeholder="Descrição" value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})}/></Field><Field label="Carga horária"><input className={field} type="number" step="0.5" min="0" placeholder="Carga horária" value={form.cargaHoraria} onChange={e=>setForm({...form,cargaHoraria:e.target.value})}/></Field><Field label="Público-alvo ou funções"><input className={field} placeholder="Público-alvo ou funções" value={form.publicoAlvo} onChange={e=>setForm({...form,publicoAlvo:e.target.value})}/></Field><Field label="Percentual mínimo para aprovação (%)"><input className={field} type="number" min="0" max="100" step="0.01" placeholder="Usar regra da turma" value={form.percentualMinimoAprovacao} onChange={e=>setForm({...form,percentualMinimoAprovacao:e.target.value})}/><span className="text-xs text-slate-500">0% dispensa nota mínima, mesmo sem notas lançadas. Vazio mantém a regra da turma. Alterações valem para novas matrículas; as regras das matrículas iniciadas são preservadas.</span></Field><Field label="Situação"><select className={field} value={form.status} onChange={e=>setForm({...form,status:e.target.value})}><option value="ATIVO">Ativo</option><option value="RASCUNHO">Rascunho</option><option value="ARQUIVADO">Arquivado</option></select></Field><div className="md:col-span-2"><CourseEvaluationSettings value={rules} onChange={setRules} disabled={!canConfigure}/></div><button disabled={!canConfigure} className="gradient-btn rounded-xl px-4 py-2.5 flex items-center justify-center gap-2"><Save size={16}/>{creating?'Criar curso':'Salvar alterações'}</button></form></section>}
         {selected && !creating && <>
           <section className="glass-panel p-5"><div className="flex items-center gap-2 mb-4"><Layers className="text-purple-300" size={18}/><h2 className="font-bold text-lg">Versão {selected.NumeroVersao || 1}: {selected.TituloVersao || 'Versão 1'}</h2></div><form onSubmit={addVersion} className="flex gap-2"><Field label="Título da próxima versão" required><input className={field} placeholder="Título da próxima versão" value={versionTitle} onChange={e=>setVersionTitle(e.target.value)} required/></Field><button className="rounded-xl px-4 bg-white/10 text-sm whitespace-nowrap">Criar versão</button></form><p className="text-xs text-slate-500 mt-2">Novas versões preservam o conteúdo e as notas dos vínculos anteriores.</p></section>
           <section className="glass-panel p-5"><h2 className="font-bold text-lg mb-4">Módulos e tópicos</h2><div className="space-y-4">{modules.map(module=><article key={module.id} className="cuida-module"><div className="flex justify-between gap-2"><h3 className="font-semibold text-purple-200 flex gap-2"><Layers size={16}/>{module.titulo}</h3><button onClick={()=>editContent('modulo',module)} className="text-xs text-indigo-300">Editar módulo</button></div>{module.descricao && <p className="text-xs text-slate-400 mt-2">{module.descricao}</p>}<ul className="cuida-topics">{module.topicos.map(topic=><li key={topic.TopicoId} className="flex justify-between gap-3 text-sm border-t border-white/5 pt-2"><div><span>{topic.TituloTopico}</span>{topic.DescricaoTopico && <p className="text-xs text-slate-500">{topic.DescricaoTopico}</p>}</div><span className="text-xs text-slate-500 whitespace-nowrap">{topic.CargaHorariaTopico ? `${topic.CargaHorariaTopico}h` : ''}{topic.MaterialUrl ? <a className="text-indigo-300 ml-2" href={topic.MaterialUrl} target="_blank" rel="noreferrer">Material</a> : ''}<button onClick={()=>editContent('topico',topic)} className="text-indigo-300 ml-2">Editar</button></span></li>)}</ul></article>)}{!modules.length && <p className="text-sm text-slate-500">Ainda não há módulos nesta versão.</p>}</div>

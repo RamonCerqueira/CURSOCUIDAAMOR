@@ -8,6 +8,7 @@ export async function GET() {
   if (!actor) return NextResponse.json({ sucesso: false, mensagem: 'Entre pelo SoftCare para consultar seus cursos.' }, { status: 401 })
   try {
     await ensureCursoTables()
+    if(actor.precisaTrocarSenha)return NextResponse.json({sucesso:true,data:{nome:actor.nome,cursos:[],precisaTrocarSenha:true}})
     // ALUNO tokens referenciam CodCli; demais funções do SoftCare são resolvidas pelo CodUsu/e-mail.
     const people = actor.role === 'ALUNO'
       ? await prisma.$queryRaw<any[]>`SELECT TOP 1 CodCli,Cliente,Razao FROM dbo.CLIENTEs WHERE CodCli=${actor.id}`
@@ -24,7 +25,7 @@ export async function GET() {
     const data = await Promise.all(links.map(async (link) => {
       const [conteudo, notas, turma, certificados, comunicados] = await Promise.all([
         prisma.$queryRaw<any[]>`SELECT m.ModuloId,m.Titulo AS Modulo,t.TopicoId,t.Titulo AS Topico,t.Descricao,t.CargaHoraria,t.MaterialUrl,t.Ordem FROM dbo.CursoModulo m LEFT JOIN dbo.CursoTopico t ON t.ModuloId=m.ModuloId WHERE m.VersaoId=${link.VersaoId} ORDER BY m.Ordem,t.Ordem`,
-        prisma.$queryRaw<any[]>`SELECT NotaId,Avaliacao,Nota,Conceito,Situacao,DataAvaliacao,Observacao FROM dbo.CursoNota WHERE VinculoId=${link.VinculoId} AND Situacao IN (N'LANÇADA',N'DISPENSADA') ORDER BY DataAvaliacao DESC,NotaId DESC`,
+        prisma.$queryRaw<any[]>`SELECT NotaId,Avaliacao,Nota,NotaMaxima,Etapa,Conceito,Situacao,DataAvaliacao,Observacao FROM dbo.CursoNota WHERE VinculoId=${link.VinculoId} AND Situacao IN (N'LANÇADA',N'DISPENSADA') ORDER BY DataAvaliacao DESC,NotaId DESC`,
         link.TurmaId ? prisma.$queryRaw<any[]>`SELECT Nome AS Turma,Turno,Horario,DataInicio,DataFim,CargaHoraria FROM dbo.CursoTurma WHERE TurmaId=${link.TurmaId}` : Promise.resolve([]),
         prisma.$queryRaw<any[]>`SELECT CertificadoId,CodigoValidacao,EmitidoEm FROM dbo.CursoCertificado WHERE VinculoId=${link.VinculoId} AND CanceladoEm IS NULL ORDER BY EmitidoEm DESC`,
         link.TurmaId ? prisma.$queryRaw<any[]>`SELECT ComunicadoId,Titulo,Mensagem,PublicadoEm FROM dbo.CursoComunicado WHERE Publicado=1 AND (TurmaId IS NULL OR TurmaId=${link.TurmaId}) ORDER BY PublicadoEm DESC` : prisma.$queryRaw<any[]>`SELECT ComunicadoId,Titulo,Mensagem,PublicadoEm FROM dbo.CursoComunicado WHERE Publicado=1 AND TurmaId IS NULL ORDER BY PublicadoEm DESC`,

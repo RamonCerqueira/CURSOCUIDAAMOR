@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
 
+export const dynamic='force-dynamic'
 export async function GET() {
   try {
     const auth = await requireCourseAdmin()

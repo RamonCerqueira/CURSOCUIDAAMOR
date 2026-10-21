@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminPageHeader, ActionMenu, Drawer, Field, FilterTabs, InitialAvatar, SearchField, StatusBadge, EmptyState, Notice, Pagination, useTablePage } from '@/components/AdminUI'
@@ -108,13 +109,13 @@ export default function AdminAlunosPage() {
     </AdminPageHeader>
     {message&&<Notice>{message}</Notice>}
     {credentials&&<div className="cuida-notice cuida-credential"><strong><KeyRound size={15}/> Senha temporária de {credentials.name}</strong><p className="font-mono text-xl my-2 select-all">{credentials.password}</p><p>Mostre esta senha à pessoa por um canal seguro. Ela deverá criar uma senha pessoal no primeiro acesso.</p><button className="cuida-button small mt-3" onClick={()=>setCredentials(null)}>Fechar aviso</button></div>}
-    {filtersOpen&&<section className="cuida-panel mb-4"><div className="cuida-panel-body"><Field label="Função no cadastro"><select value={funcao} onChange={e=>{setFuncao(e.target.value);load(query,e.target.value)}}><option value="ALUNO">Alunos</option><option value="PROFESSOR" disabled>Professores (em breve)</option><option value="TODOS">Todas as funções</option></select></Field></div></section>}
+    {filtersOpen&&<section className="cuida-panel mb-4"><div className="cuida-panel-body"><Field label="Função no cadastro"><select value={funcao} onChange={e=>{setFuncao(e.target.value);load(query,e.target.value)}}><option value="ALUNO">Alunos</option><option value="PROFESSOR">Professores cadastrados</option><option value="TODOS">Todas as funções</option></select></Field></div></section>}
     <section className="cuida-panel">
       <FilterTabs value={funcao} onChange={value=>{setFuncao(value);load(query,value)}} items={[{value:'ALUNO',label:'Alunos',count:funcao==='ALUNO'?total:undefined},{value:'TODOS',label:'Todas as funções',count:funcao==='TODOS'?total:undefined}]}/>
       <div className="cuida-table-scroll"><table className="cuida-table"><thead><tr><th>Código</th><th>Aluno</th><th>E-mail</th><th>Telefone</th><th>Cursos</th><th>Função atual</th><th>Situação</th><th className="actions">Ações</th></tr></thead><tbody>{!loading&&paging.items.map(person=><tr key={person.CodCli}>
-        <td className="nowrap">#{person.CodCli}</td><td><div className="cuida-person-cell"><InitialAvatar name={person.Nome||'Sem nome'}/><strong>{person.Nome||'Sem nome'}</strong></div></td>
+        <td className="nowrap">#{person.CodCli}</td><td><div className="cuida-person-cell"><InitialAvatar name={person.Nome||'Sem nome'}/><Link className="font-semibold hover:underline" href={`/admin/alunos/${person.CodCli}`}>{person.Nome||'Sem nome'}</Link></div></td>
         <td>{person.Email||'—'}</td><td className="nowrap">{person.Telefone||'—'}</td><td>{person.Cursos??'—'}</td><td><span className="cuida-badge neutral">{person.FuncaoAtual||'ALUNO'}</span></td><td><StatusBadge value={person.Situacao==='A'?'ATIVO':person.Situacao==='I'?'INATIVO':person.Situacao}/></td>
-        <td className="actions"><ActionMenu items={[{label:'Vincular a um curso',onClick:()=>setLinkFor(person)},{label:'Gerar ou redefinir acesso',onClick:()=>createAccess(person)}]}/></td>
+        <td className="actions"><ActionMenu items={[{label:'Ver perfil e histórico',href:`/admin/alunos/${person.CodCli}`},{label:'Vincular a um curso',onClick:()=>setLinkFor(person)},{label:'Gerar ou redefinir acesso',onClick:()=>createAccess(person)}]}/></td>
       </tr>)}</tbody></table></div>
       {loading?<EmptyState loading title="Carregando alunos..."/>:!people.length&&<EmptyState title="Nenhum aluno encontrado" description="Ajuste a pesquisa ou selecione outra função."/>}
       <Pagination {...paging}/>

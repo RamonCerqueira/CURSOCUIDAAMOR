@@ -1,4 +1,4 @@
-export type AcademicRecord = { MatriculaCodigo:string; Aluno:string; CodCli:string; Curso:string; Turma:string; Turno:string; VinculadoEm:string; Situacao:string; ResultadoFinal:string; Media:string; FrequenciaPercentual:string }
+export type AcademicRecord = { EtapaTeorica?:string;EtapaPratica?:string;EtapaFinal?:string;Aptidao?:string; MatriculaCodigo:string; Aluno:string; CodCli:string; Curso:string; Turma:string; Turno:string; VinculadoEm:string; Situacao:string; ResultadoFinal:string; Media:string; FrequenciaPercentual:string }
 
 /** Parse the existing semicolon CSV export, including quoted newlines and quotes. */
 export function parseAcademicCSV(csv:string): AcademicRecord[] {

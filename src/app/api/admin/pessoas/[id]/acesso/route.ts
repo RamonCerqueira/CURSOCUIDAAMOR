@@ -22,7 +22,7 @@ export async function POST(_request: Request, { params }: { params: { id: string
     await prisma.$executeRaw`
       MERGE dbo.CursoAcesso AS target
       USING (SELECT ${codCli} AS CodCli) AS source ON target.CodCli=source.CodCli
-      WHEN MATCHED THEN UPDATE SET HashSenha=${hash},Salt=${salt},PrecisaTrocarSenha=1,Tentativas=0,BloqueadoAte=NULL,AtualizadoEm=SYSUTCDATETIME()
+      WHEN MATCHED THEN UPDATE SET SessionVersion=SessionVersion+1,HashSenha=${hash},Salt=${salt},PrecisaTrocarSenha=1,Tentativas=0,BloqueadoAte=NULL,AtualizadoEm=SYSUTCDATETIME()
       WHEN NOT MATCHED THEN INSERT (CodCli,HashSenha,Salt,PrecisaTrocarSenha,Tentativas) VALUES (${codCli},${hash},${salt},1,0);
     `
     await auditCourse(auth.actor.id, auth.actor.role, 'RESETAR_ACESSO', 'PESSOA', codCli)

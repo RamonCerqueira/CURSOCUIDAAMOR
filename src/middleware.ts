@@ -23,12 +23,12 @@ async function validPayload(token: string, secret: string) {
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
-  if (path.startsWith('/_next') || path.startsWith('/api/auth/login') || path.startsWith('/api/auth/logout') || path.startsWith('/api/certificados/') || path.startsWith('/validar/') || path === '/login' || path === '/login-cuidado.jpg' || path === '/favicon.ico') return NextResponse.next()
+  if (path.startsWith('/_next') || path.startsWith('/api/auth/login') || path.startsWith('/api/auth/logout') || path.startsWith('/api/certificados/') || path.startsWith('/validar/') || path === '/login' || path === '/login-cuidado.jpg' || path === '/favicon.ico' || path === '/logo01.svg' || path === '/icon.svg') return NextResponse.next()
   const secrets = [...new Set([process.env.CURSO_JWT_SECRET, process.env.JWT_SECRET, process.env.NODE_ENV !== 'production' ? 'dev-secret' : ''].filter(Boolean))] as string[]
   const tokens = [request.cookies.get('token')?.value, request.cookies.get('curso_token')?.value].filter(Boolean) as string[]
   const payloads = (await Promise.all(tokens.map(async token => (await Promise.all(secrets.map(secret => validPayload(token, secret)))).find(Boolean)))).filter(Boolean)
   const payload = (path.startsWith('/admin') || path.startsWith('/api/admin'))
-    ? payloads.find(candidate => ['ADMIN','SUPERVISOR'].includes(String(candidate.role || '').toUpperCase()))
+    ? payloads.find(candidate => ['ADMIN','SUPERVISOR','COORDENADORA'].includes(String(candidate.role || '').toUpperCase()))
     : payloads[0]
   if (!payload) {
     if (path.startsWith('/api/')) return NextResponse.json({ sucesso: false, mensagem: 'Sessão ausente ou expirada.' }, { status: 401 })
@@ -38,10 +38,14 @@ export async function middleware(request: NextRequest) {
   }
   const role = String(payload.role || '').toUpperCase()
   if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
-    if (!['ADMIN', 'SUPERVISOR'].includes(role)) {
+    if (!['ADMIN', 'SUPERVISOR', 'COORDENADORA'].includes(role)) {
       if (path.startsWith('/api/')) return NextResponse.json({ sucesso: false, mensagem: 'Acesso restrito à administração.' }, { status: 403 })
-      return NextResponse.redirect(new URL('/aluno', request.url))
+      return NextResponse.redirect(new URL(['TEORICA','PRATICA'].includes(role) ? '/docente' : '/aluno', request.url))
     }
+  }
+  if ((path.startsWith('/docente') || path.startsWith('/api/docente')) && !['ADMIN','SUPERVISOR','TEORICA','PRATICA'].includes(role)) {
+    if (path.startsWith('/api/')) return NextResponse.json({ sucesso:false,mensagem:'Acesso restrito à equipe docente.' },{status:403})
+    return NextResponse.redirect(new URL(role === 'COORDENADORA' ? '/admin/coordenacao' : '/aluno',request.url))
   }
   return NextResponse.next()
 }
