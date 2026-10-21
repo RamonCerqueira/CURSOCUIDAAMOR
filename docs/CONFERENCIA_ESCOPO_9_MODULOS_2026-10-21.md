@@ -1,5 +1,7 @@
 # Conferência dos nove módulos propostos
 
+> Registro anterior às melhorias do fluxo guiado. Consulte [a entrega e o guia atualizados](GUIA_AVALIACAO_2026-10-21.md) para os itens concluídos e os limites de homologação.
+
 Data: 21/10/2026. Documento de conferência, sem implementar novos recursos durante esta análise.
 
 ## Resposta direta

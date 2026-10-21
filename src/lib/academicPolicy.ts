@@ -34,9 +34,9 @@ export function evaluationErrors(policy:Policy,stage:Stage,notes:any[]):string[]
   const launched=notes.filter(n=>n.Etapa===stage&&n.Situacao==='LANÇADA')
   if(!launched.length)return [`Registre pelo menos uma avaliação ${stageNames[stage].toLowerCase()}.`]
   const errors:string[]=[],average=stageAverage(rule,launched),minimum=stagePercentage(policy,rule),latest=orderedEvaluations(launched)[0]
-  if(['NOTA','MISTA'].includes(rule.metodo)&&average==null)errors.push('Informe a nota da avaliação.')
+  if(['NOTA','MISTA'].includes(rule.metodo)&&(average==null||latest.Nota==null))errors.push('Informe a nota da avaliação.')
   if(rule.metodo!=='PARECER'&&minimum>0&&average!=null&&average+1e-8<minimum/10)errors.push(`Aproveitamento da etapa ${stageNames[stage].toLowerCase()} abaixo de ${minimum}%.`)
-  if(['PARECER','MISTA'].includes(rule.metodo)&&!String(latest.Conceito||latest.Observacao||'').trim())errors.push('Registre um parecer descritivo na avaliação mais recente.')
+  if(['PARECER','MISTA'].includes(rule.metodo)&&![latest.Conceito,latest.Observacao].some(value=>String(value||'').trim()))errors.push('Registre um parecer descritivo na avaliação mais recente.')
   for(const criterion of rule.criterios){
     const answer=rule.criteriosFormato==='CHECKLIST'?criteriaAnswers(latest.Criterios)[criterion]:orderedEvaluations(launched).map(n=>criteriaAnswers(n.Criterios)[criterion]).find(Boolean)
     if(!answer)errors.push(`Avalie o critério: ${criterion}.`)

@@ -197,7 +197,7 @@ export default function AdminCursosPage() {
       </div></form>}
 
       {tab === 'avaliacao' && <form onSubmit={submitCourse} className="cuida-panel"><div className="cuida-panel-body">
-        <CourseEvaluationSettings value={rules} onChange={setRules} disabled={!canConfigure} defaultPercentage={Number(form.percentualMinimoAprovacao)||0} />
+        <Field label="Padrão de aprovação do curso (%)" wide><input type="number" min="0" max="100" step="0.01" placeholder="Usar mínimo definido na turma" value={form.percentualMinimoAprovacao} disabled={!canConfigure} onChange={e=>setForm({...form,percentualMinimoAprovacao:e.target.value})}/><small>Use 0 para dispensar nota mínima. Cada etapa pode ter um mínimo diferente abaixo. Se ficar vazio, será usada a nota mínima da turma.</small></Field><div className="mt-5"/><CourseEvaluationSettings value={rules} onChange={setRules} disabled={!canConfigure} defaultPercentage={form.percentualMinimoAprovacao===''?null:Number(form.percentualMinimoAprovacao)} />
         {saveButton}
       </div></form>}
 

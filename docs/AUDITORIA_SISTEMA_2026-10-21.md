@@ -1,5 +1,7 @@
 # Auditoria do sistema Cuida Amor
 
+> Registro anterior às melhorias do fluxo guiado. Consulte [a entrega e o guia atualizados](GUIA_AVALIACAO_2026-10-21.md) para os itens concluídos e os limites de homologação.
+
 Data: 21/10/2026. Escopo: código atual, documentos anexados na conversa, requisitos posteriores, testes locais, compilação e consulta somente de leitura à base configurada neste projeto.
 
 ## Conclusão

@@ -22,7 +22,7 @@
     "react-dom": "^18.3.1"
   },
   "overrides": {
-    "next": { "postcss": "$postcss" }
+    "postcss": "$postcss"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

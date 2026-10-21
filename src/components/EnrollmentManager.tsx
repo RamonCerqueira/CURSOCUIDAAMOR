@@ -1,27 +1,20 @@
 'use client'
 import { AssessmentPanel } from '@/components/AssessmentPanel'
 import { FormEvent, useCallback, useEffect, useState } from 'react'
-import { Check, FileText, GraduationCap, Plus, Save, XCircle } from 'lucide-react'
-import { EvaluationCriteria } from '@/components/EvaluationCriteria'
+import { Check, FileText, GraduationCap, Plus, XCircle } from 'lucide-react'
 import { EnrollmentTools } from '@/components/EnrollmentTools'
-import { EmptyState, Field, FilterTabs, MoreOptions, Notice, StatusBadge } from '@/components/AdminUI'
-import { Policy } from '@/lib/academicPolicy'
+import { EmptyState, Field, FilterTabs, Notice, StatusBadge } from '@/components/AdminUI'
 
 type Grade = { Criterios: string | null; Etapa: string | null; Avaliador: string | null; NotaId: number; Avaliacao: string; Nota: number | null; NotaMaxima: number | null; Peso: number | null; Conceito: string | null; Situacao: string; DataAvaliacao: string | null; Observacao: string | null }
-const blankNote = { etapa: '', avaliacao: '', nota: '', notaMaxima: '10', peso: '1', conceito: '', situacao: 'LANÇADA', dataAvaliacao: '', observacao: '' }
-const stageLabel: Record<string, string> = { TEORICA: 'Teórica', PRATICA: 'Prática', FINAL: 'Final' }
 const docStatus = ['PENDENTE', 'RECEBIDO', 'DISPENSADO', 'REJEITADO']
 const fmt = (v: string | null) => v ? new Date(v).toLocaleDateString('pt-BR') : '—'
 
 /** Painel completo de uma matrícula: resumo e resultado, notas e checklist de documentos. */
 export function EnrollmentManager({ id, onChanged, initialTab = 'resumo', embedded = false }: { id: number; onChanged?: () => void; initialTab?: 'resumo' | 'notas' | 'documentos'; embedded?: boolean }) {
   const [row, setRow] = useState<any>(null), [loading, setLoading] = useState(true), [message, setMessage] = useState('')
-  const [tab, setTab] = useState<string>(initialTab), [policy, setPolicy] = useState<Policy | null>(null)
+  const [tab, setTab] = useState<string>(initialTab),[revision,setRevision]=useState(0)
   const [notes, setNotes] = useState<Grade[]>([]), [documents, setDocuments] = useState<any[]>([])
-  const [form, setForm] = useState(blankNote), [criteria, setCriteria] = useState<Record<string, string>>({})
   const [docForm, setDocForm] = useState({ tipo: '', status: 'PENDENTE' })
-  const [editingNote, setEditingNote] = useState<Grade | null>(null)
-  const [correction, setCorrection] = useState({ nota: '', notaMaxima: '', peso: '', conceito: '', avaliacao: '', etapa: '', dataAvaliacao: '', observacao: ''}), [correctionCriteria, setCorrectionCriteria] = useState<Record<string, string>>({})
 
   const call = async (url: string, method = 'GET', body?: unknown) => {
     const r = await fetch(url, { method, headers: body ? { 'Content-Type': 'application/json' } : undefined, body: body ? JSON.stringify(body) : undefined })
@@ -34,7 +27,7 @@ export function EnrollmentManager({ id, onChanged, initialTab = 'resumo', embedd
   const loadDocs = useCallback(async () => { try { setDocuments((await call(`/api/admin/vinculos/${id}/documentos`)).data || []) } catch (e: any) { setMessage(e.message) } }, [id])
   useEffect(() => { setLoading(true); setRow(null); setMessage(''); loadRow(); loadNotes(); loadDocs() }, [id, loadRow, loadNotes, loadDocs])
 
-  const refresh = async () => { await loadRow(); onChanged?.() }
+  const refresh = async () => { await loadRow();setRevision(r=>r+1); onChanged?.() }
   const patch = async (body: unknown, ok: string) => { try { await call(`/api/admin/vinculos/${id}`, 'PATCH', body); setMessage(ok); await refresh() } catch (e: any) { setMessage(e.message) } }
   const name = row?.Razao || row?.Cliente || `Pessoa ${row?.CodCli ?? ''}`
   const changeStatus = (situacao: string) => { if (situacao === 'CANCELADO' && !window.confirm(`Cancelar a matrícula de ${name}?`)) return; patch({ situacao }, 'Situação atualizada.') }
@@ -44,45 +37,38 @@ export function EnrollmentManager({ id, onChanged, initialTab = 'resumo', embedd
     try { const j = await call('/api/admin/certificados', 'POST', { vinculoId: id }); if (win) win.location.href = `/certificado/${id}`; setMessage(`Certificado emitido. Código: ${j.data.CodigoValidacao}`); await refresh() }
     catch (e: any) { win?.close(); setMessage(e.message) }
   }
-  const saveNote = async (e: FormEvent) => { e.preventDefault(); try { await call(`/api/admin/vinculos/${id}/notas`, 'POST', { ...form, criterios: criteria }); setForm(blankNote); setCriteria({}); setMessage('Nota lançada.'); await loadNotes(); onChanged?.() } catch (err: any) { setMessage(err.message) } }
-  const editNote = (n: Grade) => {
-    setEditingNote(n); try { setCorrectionCriteria(n.Criterios ? JSON.parse(n.Criterios) : {}) } catch { setCorrectionCriteria({}) }
-    setCorrection({ nota: n.Nota == null ? '' : String(n.Nota), notaMaxima: String(n.NotaMaxima ?? 10), peso: String(n.Peso ?? 1), conceito: n.Conceito || '', avaliacao: n.Avaliacao, etapa: n.Etapa || '', dataAvaliacao: n.DataAvaliacao?.slice(0, 10) || '', observacao: n.Observacao || '' })
-  }
-  const saveCorrection = async (e: FormEvent) => { e.preventDefault(); if (!editingNote) return; try { await call(`/api/admin/vinculos/${id}/notas`, 'PATCH', { notaId: editingNote.NotaId, ...correction, criterios: correctionCriteria, situacao: editingNote.Situacao }); setMessage('Nota corrigida com auditoria.'); setEditingNote(null); await loadNotes(); onChanged?.() } catch (err: any) { setMessage(err.message) } }
   const saveDoc = async (e: FormEvent) => { e.preventDefault(); try { await call(`/api/admin/vinculos/${id}/documentos`, 'POST', docForm); setDocForm({ tipo: '', status: 'PENDENTE' }); setMessage('Documento incluído no checklist.'); await loadDocs() } catch (err: any) { setMessage(err.message) } }
   const updateDoc = async (documentoId: number, status: string) => { try { await call(`/api/admin/vinculos/${id}/documentos`, 'PATCH', { documentoId, status }); setMessage('Checklist atualizado.'); await loadDocs() } catch (err: any) { setMessage(err.message) } }
 
   if (loading) return <EmptyState loading title="Carregando matrícula..." />
   if (!row) return <>{message && <Notice>{message}</Notice>}<EmptyState title="Matrícula não encontrada" /></>
   const pendingDocs = documents.filter(d => d.Status === 'PENDENTE').length
-  const stageCriteria = (stage: string) => policy?.etapas.find(r => r.etapa === stage)?.criterios || []
 
   return <>
     <section className="cuida-enroll-head">
       <div><span className="cuida-prof-eyebrow">MATRÍCULA {row.MatriculaCodigo || `#${row.VinculoId}`}</span><h3>{row.Curso}</h3><p>{embedded ? '' : `${name} · `}{row.Turma || 'Sem turma atribuída'} · desde {fmt(row.VinculadoEm)}</p></div>
       <div className="cuida-enroll-badges"><StatusBadge value={row.Situacao} />{row.ResultadoFinal && <StatusBadge value={row.ResultadoFinal} />}</div>
     </section>
-    <FilterTabs value={tab} onChange={setTab} items={[{ value: 'resumo', label: 'Resumo e resultado' }, { value: 'notas', label: 'Notas', count: notes.length }, { value: 'documentos', label: 'Documentos', count: pendingDocs || undefined }]} />
+    <FilterTabs value={tab} onChange={setTab} items={[{ value: 'resumo', label: 'Resumo e resultado' }, { value: 'notas', label: 'Avaliações', count: notes.length }, { value: 'documentos', label: 'Documentos', count: pendingDocs || undefined }]} />
     {message && <Notice>{message}</Notice>}
 
-    {/* EnrollmentTools é mantido montado para que a política da etapa esteja disponível ao lançar notas. */}
+    {/* O resumo permanece montado para preservar seu estado entre abas. */}
     <div style={{ display: tab === 'resumo' ? 'block' : 'none' }}>
       <section className="cuida-panel"><div className="cuida-panel-body">
-        <EnrollmentTools key={row.VinculoId} id={row.VinculoId} codCli={row.CodCli} courseId={row.CursoId} readOnly={row.Situacao !== 'ATIVO'} hideProfileLink={embedded} onPolicy={setPolicy} onChanged={refresh} />
+        <EnrollmentTools key={`${row.VinculoId}:${revision}`} id={row.VinculoId} codCli={row.CodCli} courseId={row.CursoId} readOnly={row.Situacao !== 'ATIVO'} hideProfileLink={embedded} onChanged={refresh} />
       </div></section>
     </div>
 
     {tab === 'resumo' && <section className="cuida-panel" style={{ marginTop: 16 }}><div className="cuida-panel-body">
-      <div className="cuida-section-title"><h3>Encerramento da matrícula</h3></div>
+      <div className="cuida-section-title"><h3>Encerramento da matrícula</h3><p className="cuida-help">Depois de aprovar as etapas e cumprir a frequência, conclua a matrícula para liberar o certificado.</p></div>
       <div className="cuida-action-row">
         {row.Situacao === 'ATIVO' ? <>
-          <button className="cuida-button primary" onClick={() => closeResult('APROVADO')}><Check size={14} />Aprovar</button>
+          <button className="cuida-button primary" onClick={() => closeResult('APROVADO')}><Check size={14} />Concluir com aprovação</button>
           <button className="cuida-button danger" onClick={() => closeResult('REPROVADO')}><XCircle size={14} />Reprovar</button>
           <button className="cuida-button" onClick={() => changeStatus('CONCLUIDO')}>Concluir sem resultado</button>
         </> : <button className="cuida-button" onClick={() => changeStatus('ATIVO')}>{row.Situacao === 'CONCLUIDO' ? 'Reabrir matrícula' : 'Reativar matrícula'}</button>}
         {row.ResultadoFinal === 'APROVADO' && <button className="cuida-button primary" onClick={issueCertificate}><GraduationCap size={14} />Emitir certificado</button>}
-        <a className="cuida-button" href={`/admin/documentos/${row.VinculoId}`} target="_blank" rel="noreferrer"><FileText size={14} />Comprovante</a>
+        <a className="cuida-button" href={`/admin/documentos/${row.VinculoId}`} target="_blank" rel="noreferrer"><FileText size={14} />Comprovante</a><a className="cuida-button" href={`/admin/documentos/${row.VinculoId}?tipo=historico`} target="_blank" rel="noreferrer"><FileText size={14}/>Histórico escolar</a>
         {row.Situacao !== 'CANCELADO' && <button className="cuida-button danger" onClick={() => changeStatus('CANCELADO')}>Cancelar matrícula</button>}
       </div>
     </div></section>}
