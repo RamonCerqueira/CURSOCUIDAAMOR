@@ -27,7 +27,7 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 - Criação e manutenção das tabelas acadêmicas: `CursoCatalogo`, `CursoVersao`, `CursoTurma`, `CursoAula`, `CursoVinculo`, `CursoNota`, `CursoEtapa`, `CursoFrequencia`, `CursoCertificado`, `CursoAuditoria` e `CursoConfiguracao`.
 - Mecanismo seguro de concorrência com bloqueio transacional (`TABLOCKX, HOLDLOCK`) para alocação de IDs legados em `dbo.CLIENTEs`.
 - Tratamento avançado de tipos nativos SQL Server (Datas, Nulos, Varchar vs Nvarchar e compatibilidade de constraints).
-- *Horas estimadas:* **60 horas**
+- *Horas estimadas:* **8 horas**
 
 ### Módulo 2: Design System e Experiência do Usuário (UI/UX Sênior)
 - Arquitetura CSS modular baseada em Design Tokens (Cores institucionais Cuida Amor, sombras, raios, tipografia `DM Sans` e `Manrope`).
@@ -39,7 +39,7 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
   - `StatusBadge` com normalização de estados e cores semânticas.
   - Componentes de paginação assíncrona e `EmptyState`.
 - Layout 100% responsivo com Sidebar expansível/retrátil e versão mobile com drawer overlay.
-- *Horas estimadas:* **55 horas**
+- *Horas estimadas:* **6 horas**
 
 ### Módulo 3: Gestão de Alunos e Cadastros
 - Consulta integrada à base do SoftCare com paginação via servidor (`OFFSET / FETCH NEXT`).
@@ -47,7 +47,7 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 - Ordenação prioritária com alunos ativos primeiro por ordem alfabética (A-Z).
 - Cadastro completo de aluno em Drawer (dados pessoais, contato, documentos e endereço com máscara).
 - Emissão e redefinição instantânea de senha temporária segura para primeiro acesso.
-- *Horas estimadas:* **45 horas**
+- *Horas estimadas:* **6 horas**
 
 ### Módulo 4: Gestão de Catálogo de Cursos e Turmas
 - Cadastro e versão de cursos com regras de aprovação customizáveis (percentual mínimo, nota mínima por etapa, frequência exigida).
@@ -55,7 +55,7 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 - Gestão de turmas: turnos, vagas, período de inscrições, datas de início/fim e professores atribuídos.
 - Gestão de aulas com calendário, registro de horários e locais.
 - Chamada digital por aula com registro de presença, falta, justificativa e reposição.
-- *Horas estimadas:* **50 horas**
+- *Horas estimadas:* **7 horas**
 
 ### Módulo 5: Matrículas, Avaliações e Acompanhamento Acadêmico
 - Fluxo de matrícula *in-place* por Drawer, com busca instantânea de alunos e seleção de turma sem sair da tela.
@@ -63,14 +63,14 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 - Lançamento e correção de avaliações com auditoria obrigatória de alterações.
 - Avaliações multidimensionais (critérios descritivos, pareceres conceituais e notas numéricas).
 - Ficha individual do aluno com histórico consolidado, aptidão profissional e status de conclusão.
-- *Horas estimadas:* **60 horas**
+- *Horas estimadas:* **8 horas**
 
 ### Módulo 6: Portais Docente e Coordenação Pedagógica
 - **Área da Coordenadora:** painel com visão unificada de admissões, acompanhamento de turmas e atalhos de gestão.
 - **Área da Professora Teórica:** turmas atribuídas, lista de presença, lançamento de notas e pareceres da etapa teórica.
 - **Área da Professora Prática:** vivência em abrigo, pareceres descritivos, critérios de aptidão profissional e conclusão.
 - Controle rigoroso de escopo: docentes só visualizam turmas às quais estão explicitamente atribuídas.
-- *Horas estimadas:* **40 horas**
+- *Horas estimadas:* **5 horas**
 
 ### Módulo 7: Portal do Aluno e Validação Pública de Certificados
 - Área restrita do aluno autenticada via JWT/cookies HTTP-only com troca obrigatória de senha no primeiro login.
@@ -78,21 +78,21 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 - Emissão de declaração de matrícula e histórico escolar em PDF/impressão padronizada.
 - Emissão de certificado de conclusão com código hash de autenticidade único.
 - Página pública de validação de certificado (verificação instantânea via QR Code/URL sem necessidade de login).
-- *Horas estimadas:* **40 horas**
+- *Horas estimadas:* **5 horas**
 
 ### Módulo 8: Relatórios, Dashboard e Inteligência de Dados
 - Dashboard com indicadores consolidados (total de alunos, cursos ativos, notas lançadas, formadas).
 - Gráficos visuais (evolução mensal de matrículas e gráfico de rosca de distribuição por curso).
 - Módulo de relatórios com abas analíticas (Alunos, Cursos, Turmas e Frequência Geral).
 - Exportação completa em formato CSV (`UTF-8 com BOM`) para abertura direta no Microsoft Excel.
-- *Horas estimadas:* **35 horas**
+- *Horas estimadas:* **5 horas**
 
 ### Módulo 9: Segurança, Auditoria e Administração
 - Autenticação com senhas criptografadas (PBKDF2/scrypt com salt exclusivo por usuário).
 - Controle de acessos baseado em perfis (RBAC): `ADMIN`, `COORDENADORA`, `TEORICA`, `PRATICA`, `ALUNO`.
 - Log de auditoria acadêmica em banco (`dbo.CursoAuditoria`) para rastreamento de ações críticas.
 - Configurações institucionais (nome da mantenedora, responsável legal, cargo e logotipo para certificados).
-- *Horas estimadas:* **35 horas**
+- *Horas estimadas:* **5 horas**
 
 ---
 
@@ -100,24 +100,25 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 
 | Módulo / Frente de Trabalho | Complexidade | Horas Técnicas |
 |:---|:---:|:---:|
-| 1. Integração com SoftCare / Banco SQL Server | Alta | 60h |
-| 2. Design System Sênior & Componentização | Média / Alta | 55h |
-| 3. Módulo de Alunos & Cadastros Integrados | Média | 45h |
-| 4. Catálogo de Cursos, Turmas e Aulas | Alta | 50h |
-| 5. Matrículas, Avaliações e Motor de Aprovação | Alta | 60h |
-| 6. Portais Docente e Coordenação | Média | 40h |
-| 7. Portal do Aluno & Certificados Autenticados | Média / Alta | 40h |
-| 8. Relatórios, Gráficos & Exportações | Média | 35h |
-| 9. Segurança, Auditoria e Administração | Média / Alta | 35h |
-| **Total de Horas Técnicas** | — | **420h** |
+| 1. Integração com SoftCare / Banco SQL Server | Alta | 8h |
+| 2. Design System Sênior & Componentização | Média / Alta | 6h |
+| 3. Módulo de Alunos & Cadastros Integrados | Média | 6h |
+| 4. Catálogo de Cursos, Turmas e Aulas | Alta | 7h |
+| 5. Matrículas, Avaliações e Motor de Aprovação | Alta | 8h |
+| 6. Portais Docente e Coordenação | Média | 5h |
+| 7. Portal do Aluno & Certificados Autenticados | Média / Alta | 5h |
+| 8. Relatórios, Gráficos & Exportações | Média | 5h |
+| 9. Segurança, Auditoria e Administração | Média / Alta | 5h |
+| **Total de Horas Técnicas** | — | **55h** |
 
 ---
 
 ## 4. Proposta de Investimento
 
-Considerando o escopo completo da plataforma, integração nativa com o banco do SoftCare e entrega de todos os módulos homologados:
-
-### Valor do Projeto: **R$ 6.500,00** *(Seis mil e quinhentos reais)*
+- **Total de Horas Técnicas:** **55 horas**
+- **Valor da Hora Técnica:** **R$ 120,00 / hora**
+- **Cálculo Base:** 55h × R$ 120,00 = R$ 6.600,00
+- **Valor Total com Desconto Comercial:** **R$ 6.500,00** *(Seis mil e quinhentos reais)*
 
 > **Condição Especial de Implantação:** O valor contempla o desenvolvimento, integração com o banco legado, design system exclusivo, homologação e disponibilização em produção de todos os 9 módulos listados.
 
