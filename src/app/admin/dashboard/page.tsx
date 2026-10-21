@@ -49,7 +49,10 @@ export default function AdminDashboardPage() {
       }),
     ])
     const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-    if (failures.length) setMessage('Não foi possível carregar todos os dados. Atualize para tentar novamente.')
+    if (failures.length) {
+      const firstError = failures[0].reason?.message || 'Falha de conexão com os serviços'
+      setMessage(`Não foi possível carregar todos os dados (${firstError}). Atualize para tentar novamente.`)
+    }
     setLoading(false)
   }, [])
 

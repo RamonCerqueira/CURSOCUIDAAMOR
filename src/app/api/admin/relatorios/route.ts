@@ -4,4 +4,84 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
-export async function GET(request:Request){const a=await requireCourseAdmin();if(a.response)return a.response;try{await ensureCursoTables();const sinceText=new URL(request.url).searchParams.get('desde');const since=sinceText?new Date(sinceText+'T00:00:00Z'):null;if(sinceText&&(!/^\d{4}-\d{2}-\d{2}$/.test(sinceText)||Number.isNaN(since!.getTime())||since!.toISOString().slice(0,10)!==sinceText))return NextResponse.json({sucesso:false,mensagem:'Período inválido.'},{status:400});const rows=await prisma.$queryRaw<any[]>(Prisma.sql`SELECT v.MatriculaCodigo,COALESCE(NULLIF(p.Razao,N''),p.Cliente) AS Aluno,p.CodCli,c.Nome AS Curso,t.Nome AS Turma,t.Turno,v.VinculadoEm,v.Situacao,v.ResultadoFinal,v.Aptidao,(SELECT Status FROM dbo.CursoEtapa e WHERE e.VinculoId=v.VinculoId AND e.Etapa=N'TEORICA') AS EtapaTeorica,(SELECT Status FROM dbo.CursoEtapa e WHERE e.VinculoId=v.VinculoId AND e.Etapa=N'PRATICA') AS EtapaPratica,(SELECT Status FROM dbo.CursoEtapa e WHERE e.VinculoId=v.VinculoId AND e.Etapa=N'FINAL') AS EtapaFinal,(SELECT SUM((CASE WHEN NotaMaxima>0 THEN Nota/NotaMaxima*10.0 ELSE Nota END)*COALESCE(Peso,1))/NULLIF(SUM(COALESCE(Peso,1)),0) FROM dbo.CursoNota n WHERE n.VinculoId=v.VinculoId AND n.Situacao=N'LANÇADA' AND Nota IS NOT NULL) AS Media,(SELECT CAST(100.0*SUM(CASE WHEN f.Situacao IN(N'PRESENTE',N'REPOSICAO') THEN 1 ELSE 0 END)/NULLIF(COUNT(au.AulaId),0) AS DECIMAL(5,2)) FROM dbo.CursoAula au LEFT JOIN dbo.CursoFrequencia f ON f.AulaId=au.AulaId AND f.VinculoId=v.VinculoId WHERE au.TurmaId=v.TurmaId AND ${eligibleLessons()}) AS FrequenciaPercentual FROM dbo.CursoVinculo v JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId WHERE (${since} IS NULL OR v.VinculadoEm>=${since}) ORDER BY c.Nome,t.Nome,Aluno`);const cols=['MatriculaCodigo','Aluno','CodCli','Curso','Turma','Turno','VinculadoEm','Situacao','ResultadoFinal','Media','FrequenciaPercentual','EtapaTeorica','EtapaPratica','EtapaFinal','Aptidao'];const esc=(v:any)=>`"${String(v??'').replaceAll('"','""')}"`;const csv='\uFEFF'+[cols.map(esc).join(';'),...rows.map(r=>cols.map(k=>esc(r[k])).join(';'))].join('\r\n');return new NextResponse(csv,{headers:{'Content-Type':'text/csv; charset=utf-8','Content-Disposition':'attachment; filename="relatorio-academico.csv"'}})}catch{return NextResponse.json({sucesso:false,mensagem:'Não foi possível gerar o relatório.'},{status:500})}}
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(request: Request) {
+  const a = await requireCourseAdmin()
+  if (a.response) return a.response
+  try {
+    await ensureCursoTables()
+    const sinceText = new URL(request.url).searchParams.get('desde')
+    const since = sinceText ? new Date(sinceText + 'T00:00:00Z') : null
+    if (
+      sinceText &&
+      (!/^\d{4}-\d{2}-\d{2}$/.test(sinceText) ||
+        Number.isNaN(since!.getTime()) ||
+        since!.toISOString().slice(0, 10) !== sinceText)
+    ) {
+      return NextResponse.json({ sucesso: false, mensagem: 'Período inválido.' }, { status: 400 })
+    }
+
+    const sinceFilter = sinceText && since ? Prisma.sql`v.VinculadoEm >= ${since}` : Prisma.sql`1=1`
+
+    const rows = await prisma.$queryRaw<any[]>(Prisma.sql`
+      SELECT v.MatriculaCodigo,
+        COALESCE(NULLIF(p.Razao,N''),p.Cliente) AS Aluno,
+        p.CodCli,
+        c.Nome AS Curso,
+        t.Nome AS Turma,
+        t.Turno,
+        v.VinculadoEm,
+        v.Situacao,
+        v.ResultadoFinal,
+        v.Aptidao,
+        (SELECT Status FROM dbo.CursoEtapa e WHERE e.VinculoId=v.VinculoId AND e.Etapa=N'TEORICA') AS EtapaTeorica,
+        (SELECT Status FROM dbo.CursoEtapa e WHERE e.VinculoId=v.VinculoId AND e.Etapa=N'PRATICA') AS EtapaPratica,
+        (SELECT Status FROM dbo.CursoEtapa e WHERE e.VinculoId=v.VinculoId AND e.Etapa=N'FINAL') AS EtapaFinal,
+        (SELECT SUM((CASE WHEN NotaMaxima>0 THEN Nota/NotaMaxima*10.0 ELSE Nota END)*COALESCE(Peso,1))/NULLIF(SUM(COALESCE(Peso,1)),0)
+         FROM dbo.CursoNota n WHERE n.VinculoId=v.VinculoId AND n.Situacao=N'LANÇADA' AND Nota IS NOT NULL) AS Media,
+        (SELECT CAST(100.0*SUM(CASE WHEN f.Situacao IN(N'PRESENTE',N'REPOSICAO') THEN 1 ELSE 0 END)/NULLIF(COUNT(au.AulaId),0) AS DECIMAL(5,2))
+         FROM dbo.CursoAula au
+         LEFT JOIN dbo.CursoFrequencia f ON f.AulaId=au.AulaId AND f.VinculoId=v.VinculoId
+         WHERE au.TurmaId=v.TurmaId AND ${eligibleLessons()}) AS FrequenciaPercentual
+      FROM dbo.CursoVinculo v
+      JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli
+      JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId
+      LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId
+      WHERE ${sinceFilter}
+      ORDER BY c.Nome, t.Nome, Aluno
+    `)
+
+    const cols = [
+      'MatriculaCodigo',
+      'Aluno',
+      'CodCli',
+      'Curso',
+      'Turma',
+      'Turno',
+      'VinculadoEm',
+      'Situacao',
+      'ResultadoFinal',
+      'Media',
+      'FrequenciaPercentual',
+      'EtapaTeorica',
+      'EtapaPratica',
+      'EtapaFinal',
+      'Aptidao',
+    ]
+    const esc = (v: any) => `"${String(v ?? '').replaceAll('"', '""')}"`
+    const csv =
+      '\uFEFF' +
+      [cols.map(esc).join(';'), ...rows.map((r) => cols.map((k) => esc(r[k])).join(';'))].join('\r\n')
+    return new NextResponse(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="relatorio-academico.csv"',
+      },
+    })
+  } catch (error) {
+    console.error('Falha ao gerar relatório acadêmico:', error)
+    return NextResponse.json({ sucesso: false, mensagem: 'Não foi possível gerar o relatório.' }, { status: 500 })
+  }
+}
