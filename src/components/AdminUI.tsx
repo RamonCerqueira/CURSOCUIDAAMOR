@@ -48,6 +48,10 @@ export function EmptyState({ title, description, loading = false }: { title:stri
 
 export function Notice({ children }: {children:ReactNode}) {return <div className="cuida-notice" role="status">{children}</div>}
 
+export function MoreOptions({ label = 'Mais opções', children }: { label?: string; children: ReactNode }) {
+  return <details className="cuida-more"><summary><ChevronDown size={16}/>{label}</summary><div className="cuida-form-grid">{children}</div></details>
+}
+
 export function Field({ label, required, children, wide }: {label:string;required?:boolean;children:ReactNode;wide?:boolean}) {
   return <label className={`cuida-field ${wide?'wide':''}`}><span>{label}{required&&<b aria-label="obrigatório"> *</b>}</span>{children}</label>
 }

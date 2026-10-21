@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -53,8 +53,7 @@ export function AdminSidebar({ portal = 'admin' }: {portal?:'admin'|'docente'}) 
     ] },
     { label: 'Acadêmico', items: [
       { name: 'Alunos', path: '/admin/alunos', icon: Users },
-      { name: 'Cursos', path: '/admin/cursos', icon: BookOpen },
-      { name: 'Turmas e frequência', path: '/admin/turmas', icon: CalendarDays },
+      { name: 'Cursos e turmas', path: '/admin/cursos', icon: BookOpen },
       { name: 'Matrículas e notas', path: '/admin/vinculos', icon: ClipboardList },
     ] },
     { label: 'Gestão', items: [
