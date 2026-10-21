@@ -8,7 +8,7 @@ import { AreaChart, DonutChart } from '@/components/AdminCharts'
 import { AcademicRecord, groupByCourse, monthlyEnrollments, readAcademicReport } from '@/lib/adminPresentation'
 import { Users, BookOpen, ClipboardList, GraduationCap, RefreshCw, ArrowRight } from 'lucide-react'
 
-type Summary = { totalAlunos: number; cursosAtivos: number; notasLancadas: number; cursosConcluidos: number }
+type Summary = { alunosFormados:number; totalAlunos: number; cursosAtivos: number; notasLancadas: number; cursosConcluidos: number }
 type LinkRow = {
   VinculoId: number
   Razao: string | null
@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
     { label: 'Alunos matriculados', value: stats?.totalAlunos, Icon: Users },
     { label: 'Cursos ativos', value: stats?.cursosAtivos, Icon: BookOpen },
     { label: 'Notas lançadas', value: stats?.notasLancadas, Icon: ClipboardList },
-    { label: 'Cursos concluídos', value: stats?.cursosConcluidos, Icon: GraduationCap },
+    { label: 'Alunos formados', value: stats?.alunosFormados, Icon: GraduationCap },
   ]
   const series = monthlyEnrollments(records, parsedMonths)
   const groups = groupByCourse(records)

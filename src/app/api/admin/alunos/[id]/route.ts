@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin } from '@/lib/courseApi'
-export async function GET(_:Request,{params}:{params:{id:string}}){
+export async function GET(_:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth=await requireCourseAdmin();if(auth.response)return auth.response
   const id=Number(params.id);if(!Number.isSafeInteger(id)||id<1)return NextResponse.json({sucesso:false,mensagem:'Aluno inválido.'},{status:400})
   try{

@@ -12,7 +12,7 @@ function normalizeMaterialUrl(raw: unknown) {
   } catch { return null }
 }
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, {params:routeParams}: { params:Promise<{ id: string }> }){const params=await routeParams;
   const auth = await requireCourseAdmin()
   if (auth.response) return auth.response
   try {
@@ -35,7 +35,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: Request, {params:routeParams}: { params:Promise<{ id: string }> }){const params=await routeParams;
   const auth = await requireCourseAdmin()
   if (auth.response) return auth.response
   try {
@@ -91,7 +91,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, {params:routeParams}: { params:Promise<{ id: string }> }){const params=await routeParams;
   const auth = await requireCourseAdmin()
   if (auth.response) return auth.response
   try {

@@ -36,7 +36,7 @@ export function decodeCourseToken(token: string) {
 }
 
 export async function getCourseActor(): Promise<CourseActor | null> {
-  const jar=cookies()
+  const jar=await cookies()
   const payloads=[jar.get('curso_token')?.value,jar.get('token')?.value].filter(Boolean).map(token=>decodeCourseToken(token!)).filter(Boolean)
   for(const payload of payloads){
     const id=Number(payload.id),tokenRole=String(payload.role||'').toUpperCase()

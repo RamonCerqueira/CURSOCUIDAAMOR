@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
 
-export async function POST(_request: Request, { params }: { params: { id: string } }) {
+export async function POST(_request: Request, {params:routeParams}: { params:Promise<{ id: string }> }){const params=await routeParams;
   const auth = await requireCourseAdmin()
   if (auth.response) return auth.response
   try {

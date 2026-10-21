@@ -4,14 +4,14 @@ import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin } from '@/lib/courseApi'
 import { graduationErrors,auditTransaction } from '@/lib/academicService'
 
-export async function GET(_:Request,{params}:{params:{id:string}}){
+export async function GET(_:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth=await requireCourseAdmin();if(auth.response)return auth.response
   const id=Number(params.id);if(!Number.isSafeInteger(id)||id<1)return NextResponse.json({sucesso:false,mensagem:'Matrícula inválida.'},{status:400})
   const [data]=await prisma.$queryRaw<any[]>`SELECT v.*,p.Cliente,p.Razao,p.EMail,p.EMail2,c.Nome AS Curso,t.Nome AS Turma FROM dbo.CursoVinculo v JOIN dbo.CursoCatalogo c ON c.CursoId=v.CursoId LEFT JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli LEFT JOIN dbo.CursoTurma t ON t.TurmaId=v.TurmaId WHERE v.VinculoId=${id}`
   return data?NextResponse.json({sucesso:true,data}):NextResponse.json({sucesso:false,mensagem:'Matrícula não encontrada.'},{status:404})
 }
 
-export async function PATCH(request:Request,{params}:{params:{id:string}}){
+export async function PATCH(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth=await requireCourseAdmin();if(auth.response)return auth.response
   try{
     const id=Number(params.id),b=await request.json()

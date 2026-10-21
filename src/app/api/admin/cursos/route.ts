@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
+import { requireCourseAdmin } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
 import { parseApprovalPercentage } from '@/lib/courseApproval'
+import {auditTransaction} from '@/lib/academicService'
 import { parseStageRules } from '@/lib/academicPolicy'
 
 export async function GET() {
@@ -52,9 +53,9 @@ export async function POST(request: Request) {
         INSERT INTO dbo.CursoVersao (CursoId, NumeroVersao, Titulo, VigenteDesde)
         VALUES (${created.CursoId}, 1, ${String(body.tituloVersao || 'Versão 1').trim()}, TRY_CONVERT(date, NULLIF(${vigenteParam}, '')))
       `
+      await auditTransaction(tx,auth.actor,'CRIAR','CURSO',created.CursoId,{nome,percentualMinimoAprovacao,regras:rules})
       return created
     })
-    await auditCourse(auth.actor.id, auth.actor.role, 'CRIAR', 'CURSO', curso.CursoId, { nome, percentualMinimoAprovacao })
     return NextResponse.json({ sucesso: true, data: curso }, { status: 201 })
   } catch (error: any) {
     console.error('Falha ao criar curso:', error)

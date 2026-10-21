@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { CourseActor,isCourseAdmin } from './courseAuth'
 import { academicContext,auditTransaction,invalidateStages } from './academicService'
-import { progressionErrors,stages } from './academicPolicy'
+import { progressionErrors,stages,evaluationErrors } from './academicPolicy'
 
 export async function saveEvaluation(tx:Prisma.TransactionClient,actor:CourseActor,id:number,body:any,editing=false){
   const stage=body.etapa
@@ -20,11 +20,14 @@ export async function saveEvaluation(tx:Prisma.TransactionClient,actor:CourseAct
   const date=String(body.dataAvaliacao||''),parsed=new Date(date+'T12:00:00Z')
   if(!title||title.length>160||concept.length>100||obs.length>1000||!Number.isFinite(max)||max<=0||max>999999||!Number.isFinite(weight)||weight<=0||weight>999999||(grade!=null&&(!Number.isFinite(grade)||grade<0||grade>max))||(!concept&&!obs&&grade==null)||!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==date)throw Error('Confira o título, data, nota, escala, peso e parecer.')
   const rule=c.policy.etapas.find(r=>r.etapa===stage)!
+  if(rule.escala&&max!==rule.escala)throw Error(`A escala desta etapa é de 0 a ${rule.escala}.`)
+  if(rule.metodo==='PARECER'&&grade!=null)throw Error('Esta etapa é avaliada por habilidades e parecer, sem nota numérica.')
   let answers=body.criterios??{}
   if(typeof answers==='string'){try{answers=JSON.parse(answers)}catch{throw Error('Critérios inválidos.')}}
   if(!answers||typeof answers!=='object'||Array.isArray(answers))throw Error('Critérios inválidos.')
   const criteria:Record<string,string>={}
   for(const key of rule.criterios){const answer=String(answers[key]||'').trim();if(answer.length>500)throw Error('Use até 500 caracteres por critério.');if(answer)criteria[key]=answer}
+  if(rule.criteriosFormato==='CHECKLIST'&&Object.values(criteria).some(value=>!['ATENDE','EM_DESENVOLVIMENTO','NAO_ATENDE'].includes(value)))throw Error('Selecione uma das opções de avaliação de cada habilidade.')
   const status=isCourseAdmin(actor)&&['REVISAR','DISPENSADA'].includes(body.situacao)?body.situacao:'LANÇADA'
   let previous:any=null,noteId=Number(body.notaId)
   if(editing){
@@ -37,6 +40,17 @@ export async function saveEvaluation(tx:Prisma.TransactionClient,actor:CourseAct
     noteId=row.NotaId
   }
   await invalidateStages(tx,id,c.policy,stage)
-  await auditTransaction(tx,actor,editing?'CORRIGIR':'LANÇAR','NOTA',noteId,{anterior:previous,novo:{...body,etapa:stage,criterios:criteria},vinculoId:id})
+  if(body.concluir){
+    const decision=body.decisao
+    if(!['APROVADA','RECUPERACAO','REPROVADA'].includes(decision))throw Error('Selecione o resultado da etapa.')
+    const current=await academicContext(tx,id)
+    if(decision==='APROVADA'){const blockers=evaluationErrors(current.policy,stage,current.notes);if(blockers.length)throw Error(blockers.join(' '))}
+    if(decision!=='APROVADA'&&!obs)throw Error('Descreva os pontos que o aluno precisa desenvolver.')
+    await tx.$executeRaw`MERGE dbo.CursoEtapa AS target USING(SELECT ${id} AS VinculoId,${stage} AS Etapa) AS source ON target.VinculoId=source.VinculoId AND target.Etapa=source.Etapa
+      WHEN MATCHED THEN UPDATE SET Status=${decision},Parecer=${obs||concept||null},AtualizadoPor=${actor.id},AtualizadoEm=SYSUTCDATETIME()
+      WHEN NOT MATCHED THEN INSERT(VinculoId,Etapa,Status,Parecer,AtualizadoPor) VALUES(${id},${stage},${decision},${obs||concept||null},${actor.id});`
+    await auditTransaction(tx,actor,'CONCLUIR_ETAPA','VINCULO',id,{etapa:stage,resultado:decision,notaId:noteId,etapasAnteriores:c.statuses})
+  }
+  await auditTransaction(tx,actor,editing?'CORRIGIR':'LANÇAR','NOTA',noteId,{anterior:previous,novo:{...body,etapa:stage,criterios:criteria},vinculoId:id,etapasAnteriores:c.statuses})
   return noteId
 }

@@ -1,4 +1,5 @@
 'use client'
+import { AssessmentPanel } from '@/components/AssessmentPanel'
 import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { Check, FileText, GraduationCap, Plus, Save, XCircle } from 'lucide-react'
 import { EvaluationCriteria } from '@/components/EvaluationCriteria'
@@ -66,7 +67,7 @@ export function EnrollmentManager({ id, onChanged, initialTab = 'resumo', embedd
     {message && <Notice>{message}</Notice>}
 
     {/* EnrollmentTools é mantido montado para que a política da etapa esteja disponível ao lançar notas. */}
-    <div style={{ display: tab === 'resumo' || tab === 'notas' ? 'block' : 'none' }}>
+    <div style={{ display: tab === 'resumo' ? 'block' : 'none' }}>
       <section className="cuida-panel"><div className="cuida-panel-body">
         <EnrollmentTools key={row.VinculoId} id={row.VinculoId} codCli={row.CodCli} courseId={row.CursoId} readOnly={row.Situacao !== 'ATIVO'} hideProfileLink={embedded} onPolicy={setPolicy} onChanged={refresh} />
       </div></section>
@@ -86,43 +87,7 @@ export function EnrollmentManager({ id, onChanged, initialTab = 'resumo', embedd
       </div>
     </div></section>}
 
-    {tab === 'notas' && <>
-      <section className="cuida-panel" style={{ marginTop: 16 }}><div className="cuida-panel-header"><h2>Notas lançadas</h2></div><div className="cuida-panel-body">
-        {!notes.length && <EmptyState title="Nenhuma nota lançada" description="Use o formulário abaixo para lançar a primeira avaliação." />}
-        {notes.map(n => <div key={n.NotaId} className="cuida-note-row"><div>
-          <strong>{n.Avaliacao}</strong>
-          <small>{stageLabel[n.Etapa || ''] || 'Sem etapa definida'} · {n.Avaliador || 'Responsável não identificado no registro anterior'} · {n.DataAvaliacao ? new Date(n.DataAvaliacao).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'Sem data'}</small>
-          <span>{n.Nota ?? n.Conceito ?? 'Sem nota'}{n.NotaMaxima ? ` / ${n.NotaMaxima}` : ''} · peso {n.Peso || 1} · {n.Situacao}</span>
-          {n.Conceito && n.Nota != null && <small>Parecer: {n.Conceito}</small>}{n.Observacao && <small>{n.Observacao}</small>}
-          <EvaluationCriteria value={n.Criterios} />
-        </div><button className="cuida-button small" onClick={() => editNote(n)}>Corrigir</button></div>)}
-        {editingNote && <form className="cuida-more" style={{ padding: 18, marginTop: 16, borderStyle: 'solid' }} onSubmit={saveCorrection}>
-          <div className="cuida-section-title"><h3>Corrigir “{editingNote.Avaliacao}”</h3></div>
-          <div className="cuida-form-grid">{Object.entries(correction).map(([key, value]) => <Field key={key} label={({ dataAvaliacao: 'Data da avaliação (AAAA-MM-DD)', observacao: 'Observação', etapa: 'Etapa', nota: 'Nota', notaMaxima: 'Nota máxima', peso: 'Peso', conceito: 'Conceito', avaliacao: 'Avaliação' } as Record<string, string>)[key] || key}>
-            {key === 'etapa' ? <select value={value} onChange={e => setCorrection({ ...correction, etapa: e.target.value })}><option value="">Geral / sem etapa</option><option value="TEORICA">Teórica</option><option value="PRATICA">Prática</option><option value="FINAL">Final na agência</option></select> : <input value={value} onChange={e => setCorrection({ ...correction, [key]: e.target.value })} />}
-          </Field>)}
-          {stageCriteria(correction.etapa).map(key => <Field key={key} label={key} wide><textarea maxLength={500} value={correctionCriteria[key] || ''} onChange={e => setCorrectionCriteria({ ...correctionCriteria, [key]: e.target.value })} /></Field>)}</div>
-          <div className="cuida-form-actions"><button type="button" className="cuida-button" onClick={() => setEditingNote(null)}>Cancelar correção</button><button className="cuida-button primary">Salvar correção</button></div>
-        </form>}
-      </div></section>
-      <section className="cuida-panel" style={{ marginTop: 16 }}><div className="cuida-panel-header"><h2>Lançar nova nota</h2></div><div className="cuida-panel-body"><form onSubmit={saveNote}>
-        <div className="cuida-form-grid">
-          <Field label="Etapa"><select value={form.etapa} onChange={e => setForm({ ...form, etapa: e.target.value })}><option value="">Selecione a etapa</option>{policy?.etapas.map(r => <option key={r.etapa} value={r.etapa}>{r.etapa}</option>)}</select></Field>
-          <Field label="Título da avaliação" required><input required value={form.avaliacao} onChange={e => setForm({ ...form, avaliacao: e.target.value })} /></Field>
-          <Field label="Nota"><input type="number" step="any" value={form.nota} onChange={e => setForm({ ...form, nota: e.target.value })} /></Field>
-          <Field label="Nota máxima"><input type="number" step="any" value={form.notaMaxima} onChange={e => setForm({ ...form, notaMaxima: e.target.value })} /></Field>
-          {stageCriteria(form.etapa).map(key => <Field key={key} label={key} wide><textarea maxLength={500} value={criteria[key] || ''} onChange={e => setCriteria({ ...criteria, [key]: e.target.value })} /></Field>)}
-        </div>
-        <MoreOptions label="Peso, conceito, data e observação">
-          <Field label="Peso"><input type="number" step="any" value={form.peso} onChange={e => setForm({ ...form, peso: e.target.value })} /></Field>
-          <Field label="Situação"><select value={form.situacao} onChange={e => setForm({ ...form, situacao: e.target.value })}><option>LANÇADA</option><option>REVISAR</option><option>DISPENSADA</option></select></Field>
-          <Field label="Conceito"><input value={form.conceito} onChange={e => setForm({ ...form, conceito: e.target.value })} /></Field>
-          <Field label="Data da avaliação"><input type="date" value={form.dataAvaliacao} onChange={e => setForm({ ...form, dataAvaliacao: e.target.value })} /></Field>
-          <Field label="Observação" wide><input value={form.observacao} onChange={e => setForm({ ...form, observacao: e.target.value })} /></Field>
-        </MoreOptions>
-        <div className="cuida-form-actions"><button className="cuida-button primary"><Save size={14} />Lançar nota</button></div>
-      </form></div></section>
-    </>}
+    {tab === 'notas' && <AssessmentPanel id={id} readOnly={row.Situacao!=='ATIVO'} onChanged={()=>{loadNotes();refresh()}}/>}
 
     {tab === 'documentos' && <section className="cuida-panel" style={{ marginTop: 16 }}><div className="cuida-panel-header"><h2>Checklist de documentos</h2></div><div className="cuida-panel-body">
       {!documents.length && <EmptyState title="Nenhum documento registrado" description="Inclua os documentos exigidos para acompanhar o recebimento." />}

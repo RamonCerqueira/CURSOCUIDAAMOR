@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireTeacher, teacherClassScope } from '@/lib/courseProfessional'
-import { readPolicy,progressionErrors } from '@/lib/academicPolicy'
+import { readPolicy,progressionErrors,stageAverage } from '@/lib/academicPolicy'
 import { approvalMinimumGrade } from '@/lib/courseApproval'
 
-export async function GET(request:Request,{params}:{params:{id:string}}) {
+export async function GET(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth = await requireTeacher(request)
   if (auth.response) return auth.response
   const turmaId = Number(params.id)
@@ -27,7 +27,7 @@ export async function GET(request:Request,{params}:{params:{id:string}}) {
         LEFT JOIN dbo.Senha s ON s.CodUsu=n.AvaliadorId WHERE v.TurmaId=${turmaId} AND v.Situacao<>N'CANCELADO' ORDER BY n.DataAvaliacao DESC,n.NotaId DESC`,
       prisma.$queryRaw<any[]>`SELECT e.VinculoId,e.Etapa,e.Status FROM dbo.CursoEtapa e JOIN dbo.CursoVinculo v ON v.VinculoId=e.VinculoId WHERE v.TurmaId=${turmaId}`,
     ])
-    const students=alunos.map(student=>{try{return {...student,Bloqueio:progressionErrors(readPolicy({...turma,...student}),auth.stage,etapas.filter(e=>e.VinculoId===student.VinculoId))}}catch(error){return {...student,Bloqueio:[error instanceof Error?error.message:'Configure as avaliações do curso.']}}})
+    const students=alunos.map(student=>{try{const policy=readPolicy({...turma,...student}),theory=policy.etapas.find(r=>r.etapa==='TEORICA');return {...student,MediaTeorica:theory?stageAverage(theory,notas.filter(n=>n.VinculoId===student.VinculoId&&n.Etapa==='TEORICA')):null,Bloqueio:progressionErrors(policy,auth.stage,etapas.filter(e=>e.VinculoId===student.VinculoId))}}catch(error){return {...student,Bloqueio:[error instanceof Error?error.message:'Configure as avaliações do curso.']}}})
     return NextResponse.json({sucesso:true,data:{turma,alunos:students,notas,minimumGrade:approvalMinimumGrade(turma.PercentualMinimoAprovacao,turma.NotaMinima)},preview:auth.preview,actorId:auth.actor.id})
   } catch { return NextResponse.json({sucesso:false,mensagem:'Não foi possível carregar os alunos e avaliações.'},{status:500}) }
 }

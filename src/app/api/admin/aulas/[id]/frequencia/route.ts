@@ -1,6 +1,19 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
-import { ensureCursoTables } from '@/lib/ensureCursoTables'
-export async function GET(_:Request,{params}:{params:{id:string}}){const a=await requireCourseAdmin();if(a.response)return a.response;try{await ensureCursoTables();const data=await prisma.$queryRaw<any[]>`SELECT v.VinculoId,v.CodCli,COALESCE(NULLIF(p.Razao,N''),p.Cliente) AS Nome,f.Situacao,f.Justificativa FROM dbo.CursoVinculo v JOIN dbo.CLIENTEs p ON p.CodCli=v.CodCli JOIN dbo.CursoAula au ON au.TurmaId=v.TurmaId LEFT JOIN dbo.CursoFrequencia f ON f.VinculoId=v.VinculoId AND f.AulaId=au.AulaId WHERE au.AulaId=${Number(params.id)} AND v.Situacao<>N'CANCELADO' ORDER BY Nome`;return NextResponse.json({sucesso:true,data})}catch{return NextResponse.json({sucesso:false,mensagem:'Falha ao carregar frequência.'},{status:500})}}
-export async function POST(req:Request,{params}:{params:{id:string}}){const a=await requireCourseAdmin();if(a.response)return a.response;try{await ensureCursoTables();const b=await req.json(), aulaId=Number(params.id),vinculoId=Number(b.vinculoId),situacao=String(b.situacao||'');if(!['PRESENTE','FALTA','JUSTIFICADA','REPOSICAO'].includes(situacao))return NextResponse.json({sucesso:false,mensagem:'Situação de frequência inválida.'},{status:400});const [lesson]=await prisma.$queryRaw<any[]>`SELECT Status,Inicio FROM dbo.CursoAula WHERE AulaId=${aulaId}`;if(!lesson||lesson.Status==='CANCELADA'||new Date(lesson.Inicio)>new Date())return NextResponse.json({sucesso:false,mensagem:'A chamada exige uma aula já iniciada e não cancelada.'},{status:400});const [valid]=await prisma.$queryRaw<any[]>`SELECT TOP 1 v.VinculoId FROM dbo.CursoVinculo v JOIN dbo.CursoAula a ON a.TurmaId=v.TurmaId WHERE v.VinculoId=${vinculoId} AND a.AulaId=${aulaId} AND v.Situacao<>N'CANCELADO'`;if(!valid)return NextResponse.json({sucesso:false,mensagem:'Matrícula não pertence à turma desta aula.'},{status:400});await prisma.$executeRaw`MERGE dbo.CursoFrequencia AS t USING(SELECT ${aulaId} AS AulaId,${vinculoId} AS VinculoId) AS s ON t.AulaId=s.AulaId AND t.VinculoId=s.VinculoId WHEN MATCHED THEN UPDATE SET Situacao=${situacao},Justificativa=${b.justificativa||null},AtualizadoPor=${a.actor.id},AtualizadoEm=SYSUTCDATETIME() WHEN NOT MATCHED THEN INSERT(AulaId,VinculoId,Situacao,Justificativa,AtualizadoPor) VALUES(${aulaId},${vinculoId},${situacao},${b.justificativa||null},${a.actor.id});`;await auditCourse(a.actor.id,a.actor.role,'REGISTRAR','FREQUENCIA',vinculoId,{aulaId,situacao});return NextResponse.json({sucesso:true})}catch{return NextResponse.json({sucesso:false,mensagem:'Não foi possível salvar a frequência.'},{status:500})}}
+import {NextResponse} from 'next/server'
+import {prisma} from '@/lib/prisma'
+import {requireCourseAdmin} from '@/lib/courseApi'
+import {GET as getAttendance,POST as saveAttendance} from '@/app/api/academico/turmas/[id]/chamada/route'
+async function turma(id:number){const [row]=await prisma.$queryRaw<{TurmaId:number}[]>`SELECT TurmaId FROM dbo.CursoAula WHERE AulaId=${id}`;return row?.TurmaId}
+export async function GET(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
+ const auth=await requireCourseAdmin();if(auth.response)return auth.response
+ const id=Number(params.id);if(!Number.isSafeInteger(id)||id<1)return NextResponse.json({sucesso:false,mensagem:'Aula inválida.'},{status:400})
+ const classId=await turma(id);if(!classId)return NextResponse.json({sucesso:false,mensagem:'Aula não encontrada.'},{status:404})
+ const url=new URL(request.url);url.searchParams.set('aulaId',String(id));const response=await getAttendance(new Request(url),{params:Promise.resolve({id:String(classId)})})
+ if(!response.ok)return response
+ const json=await response.json();return NextResponse.json({sucesso:true,data:json.data.alunos})
+}
+export async function POST(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
+ const auth=await requireCourseAdmin();if(auth.response)return auth.response
+ const id=Number(params.id);if(!Number.isSafeInteger(id)||id<1)return NextResponse.json({sucesso:false,mensagem:'Aula inválida.'},{status:400})
+ const classId=await turma(id);if(!classId)return NextResponse.json({sucesso:false,mensagem:'Aula não encontrada.'},{status:404})
+ try{const body=await request.json();return saveAttendance(new Request(request.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,aulaId:id})}),{params:Promise.resolve({id:String(classId)})})}catch{return NextResponse.json({sucesso:false,mensagem:'Dados inválidos.'},{status:400})}
+}

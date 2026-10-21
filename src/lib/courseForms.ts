@@ -11,5 +11,5 @@ export function lessonForm(b:any){
   const start=formDate(b.inicio),end=formDate(b.fim)
   if(!start||end&&end<start)throw Error('Confira o início e o término da aula.')
   const status=b.status||'PROGRAMADA';if(!['PROGRAMADA','REALIZADA','CANCELADA'].includes(status))throw Error('Situação da aula inválida.')
-  return {titulo:formText(b.titulo,200,true)!,inicio:start,fim:end,cargaHoraria:formNumber(b.cargaHoraria,0,999999),local:formText(b.local,200),observacao:formText(b.observacao,500),status}
+  return {moduloId:formNumber(b.moduloId,1,2147483647,true),titulo:formText(b.titulo,200,true)!,inicio:start,fim:end,cargaHoraria:formNumber(b.cargaHoraria,0,999999),local:formText(b.local,200),observacao:formText(b.observacao,500),status}
 }

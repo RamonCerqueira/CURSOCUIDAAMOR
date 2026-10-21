@@ -14,7 +14,8 @@ export async function GET() {
         (SELECT COUNT(DISTINCT CodCli) FROM dbo.CursoVinculo WHERE Situacao IN (N'ATIVO',N'CONCLUIDO')) AS totalAlunos,
         (SELECT COUNT(*) FROM dbo.CursoCatalogo WHERE Status=N'ATIVO') AS cursosAtivos,
         (SELECT COUNT(*) FROM dbo.CursoNota WHERE Situacao=N'LANÇADA') AS notasLancadas,
-        (SELECT COUNT(*) FROM dbo.CursoVinculo WHERE Situacao=N'CONCLUIDO') AS cursosConcluidos
+        (SELECT COUNT(*) FROM dbo.CursoVinculo WHERE Situacao=N'CONCLUIDO') AS cursosConcluidos,
+        (SELECT COUNT(DISTINCT CodCli) FROM dbo.CursoVinculo WHERE Situacao=N'CONCLUIDO' AND ResultadoFinal=N'APROVADO') AS alunosFormados
     `
 
     return NextResponse.json({
@@ -23,6 +24,7 @@ export async function GET() {
         totalAlunos: Number(stats.totalAlunos),
         cursosAtivos: Number(stats.cursosAtivos),
         notasLancadas: Number(stats.notasLancadas),
+        alunosFormados:Number(stats.alunosFormados),
         cursosConcluidos: Number(stats.cursosConcluidos),
       },
     })

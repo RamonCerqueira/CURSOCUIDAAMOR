@@ -5,7 +5,7 @@ import { getCourseActor,isCourseAdmin } from '@/lib/courseAuth'
 import { academicContext,auditTransaction } from '@/lib/academicService'
 import { evaluationErrors,progressionErrors,stages } from '@/lib/academicPolicy'
 
-export async function GET(_:Request,{params}:{params:{id:string}}){
+export async function GET(_:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const actor=await getCourseActor();if(!actor)return NextResponse.json({sucesso:false,mensagem:'Entre novamente.'},{status:401})
   const id=Number(params.id);if(!Number.isSafeInteger(id)||id<1)return NextResponse.json({sucesso:false,mensagem:'Matrícula inválida.'},{status:400})
   try{
@@ -14,10 +14,10 @@ export async function GET(_:Request,{params}:{params:{id:string}}){
       if(!['TEORICA','PRATICA'].includes(actor.role)||!assigned.length)return NextResponse.json({sucesso:false,mensagem:'Acesso negado.'},{status:403})
     }
     const c=await academicContext(prisma,id)
-    return NextResponse.json({sucesso:true,data:{policy:c.policy,statuses:c.statuses}})
+    return NextResponse.json({sucesso:true,data:{policy:c.policy,statuses:c.statuses,notes:c.notes,actorId:actor.id,role:actor.role,situacao:c.row.Situacao,bloqueios:Object.fromEntries(c.policy.etapas.map(r=>[r.etapa,progressionErrors(c.policy,r.etapa,c.statuses)]))}})
   }catch(error){return NextResponse.json({sucesso:false,mensagem:error instanceof Error?error.message:'Falha ao carregar etapas.'},{status:409})}
 }
-export async function PATCH(request:Request,{params}:{params:{id:string}}){
+export async function PATCH(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const actor=await getCourseActor();if(!actor)return NextResponse.json({sucesso:false,mensagem:'Entre novamente.'},{status:401})
   try{
     const b=await request.json(),id=Number(params.id),stage=b.etapa

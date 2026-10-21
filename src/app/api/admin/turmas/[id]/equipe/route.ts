@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin } from '@/lib/courseApi'
 import { auditTransaction } from '@/lib/academicService'
-export async function GET(_:Request,{params}:{params:{id:string}}){
+export async function GET(_:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth=await requireCourseAdmin();if(auth.response)return auth.response
   const id=Number(params.id)
   const data=await prisma.$queryRaw<any[]>`SELECT p.CodUsu,p.CodCli,p.Perfil,COALESCE(NULLIF(c.Razao,N''),c.Cliente,s.Usuario) AS Nome,
@@ -11,7 +11,7 @@ export async function GET(_:Request,{params}:{params:{id:string}}){
     WHERE p.Ativo=1 AND p.Perfil IN(N'TEORICA',N'PRATICA') ORDER BY Nome`
   return NextResponse.json({sucesso:true,data})
 }
-export async function POST(request:Request,{params}:{params:{id:string}}){
+export async function POST(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth=await requireCourseAdmin();if(auth.response)return auth.response
   try{const b=await request.json(),id=Number(params.id),user=Number(b.codUsu);if(!Number.isSafeInteger(id)||id<1||!Number.isSafeInteger(user)||user<1||typeof b.atribuir!=='boolean')throw Error('Informe uma turma e professora válidas.');await prisma.$transaction(async tx=>{
     const [profile]=await tx.$queryRaw<any[]>`SELECT CodCli FROM dbo.CursoProfissional WHERE CodUsu=${user} AND Ativo=1 AND Perfil IN(N'TEORICA',N'PRATICA')`

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminPageHeader, Drawer, Field, FilterTabs, MoreOptions, SearchField, StatusBadge, EmptyState, Notice, Pagination, useTablePage } from '@/components/AdminUI'
-import { StageRule, stages } from '@/lib/academicPolicy'
+import { StageRule, stages, newStageRule } from '@/lib/academicPolicy'
 import { CourseEvaluationSettings } from '@/components/CourseEvaluationSettings'
 import { ClassManagement } from '@/components/ClassManagement'
 import { ClassFormFields, emptyClass } from '@/components/ClassFormFields'
@@ -16,7 +16,7 @@ type Turma = { TurmaId: number; CursoId: number; Nome: string; Status: string; D
 type Tab = 'dados' | 'conteudo' | 'avaliacao' | 'turmas'
 
 const blank = { codigo: '', nome: '', descricao: '', cargaHoraria: '', publicoAlvo: '', percentualMinimoAprovacao: '0', status: 'ATIVO' }
-const defaultRules = (): StageRule[] => stages.map(etapa => ({ etapa, metodo: 'LIVRE', criterios: [] }))
+const defaultRules = (): StageRule[] => stages.map(newStageRule)
 const date = (v: string | null) => v ? new Date(v).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : '—'
 
 export default function AdminCursosPage() {
@@ -197,7 +197,7 @@ export default function AdminCursosPage() {
       </div></form>}
 
       {tab === 'avaliacao' && <form onSubmit={submitCourse} className="cuida-panel"><div className="cuida-panel-body">
-        <CourseEvaluationSettings value={rules} onChange={setRules} disabled={!canConfigure} />
+        <CourseEvaluationSettings value={rules} onChange={setRules} disabled={!canConfigure} defaultPercentage={Number(form.percentualMinimoAprovacao)||0} />
         {saveButton}
       </div></form>}
 

@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin } from '@/lib/courseApi'
 import { classForm } from '@/lib/courseForms'
 import { auditTransaction } from '@/lib/academicService'
-export async function PATCH(request:Request,{params}:{params:{id:string}}){
+export async function PATCH(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;
   const auth=await requireCourseAdmin();if(auth.response)return auth.response
   try{
     const id=Number(params.id),b=await request.json();if(!Number.isSafeInteger(id)||id<1)throw Error('Turma inválida.')

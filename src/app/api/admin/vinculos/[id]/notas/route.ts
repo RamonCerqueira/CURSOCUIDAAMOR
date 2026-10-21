@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, {params:routeParams}: { params:Promise<{ id: string }> }){const params=await routeParams;
   const auth = await requireCourseAdmin()
   if (auth.response) return auth.response
   try {
@@ -27,5 +27,5 @@ async function save(request:Request,params:{id:string},editing:boolean){
     return NextResponse.json({sucesso:true,data:{NotaId:noteId}},{status:editing?200:201})
   }catch(error){return NextResponse.json({sucesso:false,mensagem:error instanceof Error?error.message:'Falha ao salvar avaliação.'},{status:409})}
 }
-export async function POST(request:Request,{params}:{params:{id:string}}){return save(request,params,false)}
-export async function PATCH(request:Request,{params}:{params:{id:string}}){return save(request,params,true)}
+export async function POST(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;return save(request,params,false)}
+export async function PATCH(request:Request,{params:routeParams}:{params:Promise<{id:string}>}){const params=await routeParams;return save(request,params,true)}

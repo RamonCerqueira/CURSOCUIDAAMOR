@@ -1,4 +1,5 @@
 'use client'
+import {registrationMask} from '@/lib/inputMasks'
 
 import { StudentProfileView } from '@/components/StudentProfileView'
 import { NewEnrollmentForm } from '@/components/NewEnrollmentForm'
@@ -69,7 +70,7 @@ export default function AdminAlunosPage() {
   const studentField = (key: keyof typeof student) => ({
     value: student[key],
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      setStudent({ ...student, [key]: e.target.value })
+      setStudent({ ...student, [key]: registrationMask(key,e.target.value) })
       setFieldErrors({ ...fieldErrors, [key]: '' })
     },
   })

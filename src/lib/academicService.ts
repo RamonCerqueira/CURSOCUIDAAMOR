@@ -8,7 +8,7 @@ export async function academicContext(tx:Database,id:number,freeze=false){
   const policy=readPolicy(row)
   if(freeze&&!row.PoliticaSnapshot)await tx.$executeRaw`UPDATE dbo.CursoVinculo SET PoliticaSnapshot=${JSON.stringify(policy)} WHERE VinculoId=${id} AND PoliticaSnapshot IS NULL`
   const [notes,statuses]=await Promise.all([
-    tx.$queryRaw<any[]>`SELECT * FROM dbo.CursoNota WHERE VinculoId=${id}`,
+    tx.$queryRaw<any[]>`SELECT n.*,s.Usuario AS Avaliador FROM dbo.CursoNota n LEFT JOIN dbo.Senha s ON s.CodUsu=n.AvaliadorId WHERE n.VinculoId=${id}`,
     tx.$queryRaw<any[]>`SELECT e.*,s.Usuario AS Responsavel FROM dbo.CursoEtapa e LEFT JOIN dbo.Senha s ON s.CodUsu=e.AtualizadoPor WHERE VinculoId=${id}`,
   ])
   return {row,policy,notes,statuses}

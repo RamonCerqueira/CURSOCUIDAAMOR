@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireCourseAdmin, auditCourse } from '@/lib/courseApi'
+import { requireCourseAdmin } from '@/lib/courseApi'
 import { ensureCursoTables } from '@/lib/ensureCursoTables'
 import { parseApprovalPercentage } from '@/lib/courseApproval'
+import {auditTransaction} from '@/lib/academicService'
 import { parseStageRules } from '@/lib/academicPolicy'
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, {params:routeParams}: { params:Promise<{ id: string }> }){const params=await routeParams;
   const auth = await requireCourseAdmin()
   if (auth.response) return auth.response
   const id = Number(params.id)
@@ -22,7 +23,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if(!['ADMIN','SUPERVISOR'].includes(auth.actor.role))return NextResponse.json({sucesso:false,mensagem:'Somente o administrador configura cursos.'},{status:403})
     let rules
     try{rules=parseStageRules(body.avaliacaoConfig)}catch(error){return NextResponse.json({sucesso:false,mensagem:(error as Error).message},{status:400})}
-    const changed = await prisma.$executeRaw`
+    const changed = await prisma.$transaction(async tx=>{
+      const [old]=await tx.$queryRaw<any[]>`SELECT * FROM dbo.CursoCatalogo WHERE CursoId=${id}`
+      if(!old)return 0
+      const changed=await tx.$executeRaw`
       UPDATE dbo.CursoCatalogo SET Codigo=${String(body.codigo || '').trim() || null}, Nome=${nome}, Descricao=${String(body.descricao || '').trim() || null},
         CargaHoraria=${body.cargaHoraria ? Number(body.cargaHoraria) : null}, PublicoAlvo=${String(body.publicoAlvo || '').trim() || null},
         Status=${['ATIVO','RASCUNHO','ARQUIVADO'].includes(body.status) ? body.status : 'RASCUNHO'},
@@ -30,8 +34,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         AvaliacaoConfig=${JSON.stringify(rules)},PoliticaVersao=PoliticaVersao+1,AtualizadoEm=SYSUTCDATETIME()
       WHERE CursoId=${id}
     `
+      await auditTransaction(tx,auth.actor,'EDITAR','CURSO',id,{anterior:old,novo:{nome,percentualMinimoAprovacao,regras:rules}})
+      return changed
+    })
     if (!changed) return NextResponse.json({ sucesso: false, mensagem: 'Curso não encontrado.' }, { status: 404 })
-    await auditCourse(auth.actor.id, auth.actor.role, 'EDITAR', 'CURSO', id, { nome, ...(alterarPercentual ? { percentualMinimoAprovacao } : {}) })
     return NextResponse.json({ sucesso: true })
   } catch (error) {
     console.error('Falha ao atualizar curso:', error)
