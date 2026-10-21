@@ -115,24 +115,21 @@ A **Plataforma Cuida Amor** é uma solução completa de ensino, gestão acadêm
 
 ## 4. Proposta de Investimento
 
-Considerando o padrão de mercado para desenvolvimento sob medida Full-Stack Sênior (Next.js 14, TypeScript, Prisma ORM, SQL Server corporativo e Design System próprio):
+Considerando o escopo completo da plataforma, integração nativa com o banco do SoftCare e entrega de todos os módulos homologados:
 
-### Opção A — Valor Fechado por Projeto (Turnkey / Escopo Fechado)
-- **Valor Total do Desenvolvimento:** **R$ 38.500,00** *(Trinta e oito mil e quinhentos reais)*
-- **Valor por Hora Efetiva:** ~R$ 91,66/hora (com desconto de pacote fechado sobre o valor base de R$ 120,00/h).
+### Valor do Projeto: **R$ 6.500,00** *(Seis mil e quinhentos reais)*
+
+> **Condição Especial de Implantação:** O valor contempla o desenvolvimento, integração com o banco legado, design system exclusivo, homologação e disponibilização em produção de todos os 9 módulos listados.
 
 #### Condições de Pagamento Sugeridas:
-- **Entrada (Kickoff):** 30% (R$ 11.550,00)
-- **Entrega Intermediária (Módulos 1 a 5 homologados):** 35% (R$ 13.475,00)
-- **Entrega Final (Go-Live, deploy e treinamento):** 35% (R$ 13.475,00)
-- *Possibilidade de parcelamento em até 6x sem juros no faturamento de pessoa jurídica.*
+- **Opção 1 (Entrada + Conclusão):**
+  - **50% na contratação / início:** R$ 3.250,00
+  - **50% na entrega e homologação final:** R$ 3.250,00
+- **Opção 2 (Parcelamento em 3x):**
+  - **3 parcelas de R$ 2.166,66** (Entrada + 30 dias + 60 dias)
+- **Opção 3 (Pagamento à vista com desconto):**
+  - Pagamento único no aceite com 5% de desconto: **R$ 6.175,00**
 
----
-
-### Opção B — Modelo Mensal por Etapas (Sprint-based)
-Caso a instituição opte por faturamento mensal por entregáveis contínuos:
-- **Duração estimada:** 3 meses
-- **Valor mensal:** **3 parcelas de R$ 13.200,00** (Total: R$ 39.600,00)
 
 ---
 
